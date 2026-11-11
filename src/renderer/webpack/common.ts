@@ -3,9 +3,10 @@
  */
 
 import { proxyLazy } from "@utils/lazy";
+import { LazyComponent } from "@utils/lazyReact";
 import { Logger } from "@utils/logger";
 
-import { _resolveReady, filters, find, findByCodeLazy, findComponentByCodeLazy, findStore, type FilterFn, mapMangledModule, mapMangledModuleLazy, requireModuleByCode, search, waitFor, wreq } from "./webpack";
+import { _resolveReady, filters, find, findByCodeLazy, findCssClassesLazy, findComponentByCodeLazy, findStore, type FilterFn, mapMangledModule, mapMangledModuleLazy, requireModuleByCode, search, waitFor, wreq } from "./webpack";
 
 const logger = new Logger("Commons", "#f1fa8c");
 
@@ -129,6 +130,39 @@ export const { openModalLazy, openModal, closeModal, closeAllModals } = mapMangl
 });
 
 export const Clickable = common("Clickable", () => findSilently(filters.componentByCode("this.context?this.renderNonInteractive():")));
+
+export const TabBar = common("TabBar", () => findSilently(filters.componentByCode("ref:this.tabBarRef,className:")));
+
+export let ColorPicker: (props: any) => any = () => null;
+export const setColorPicker = (component: typeof ColorPicker) => void (ColorPicker = component);
+
+export let RoleMemberPopout: (props: any) => any = () => null;
+export const setRoleMemberPopout = (component: typeof RoleMemberPopout) => void (RoleMemberPopout = component);
+
+type CreateScroller = (scrollbarClassName: string, fadeClassName: string, customThemeClassName: string) => any;
+export let createScroller: CreateScroller | undefined;
+export const setCreateScroller = (scroller: CreateScroller) => void (createScroller = scroller);
+
+export const scrollerClasses = findCssClassesLazy("thin", "auto", "fade", "customTheme", "none");
+export const ScrollerNone = LazyComponent(() => createScroller?.(scrollerClasses.none, scrollerClasses.fade, scrollerClasses.customTheme));
+export const ScrollerThin = LazyComponent(() => createScroller?.(scrollerClasses.thin, scrollerClasses.fade, scrollerClasses.customTheme));
+export const ScrollerAuto = LazyComponent(() => createScroller?.(scrollerClasses.auto, scrollerClasses.fade, scrollerClasses.customTheme));
+
+export const UserUtils = {
+    getUser: findByCodeLazy(".USER(")
+};
+
+export const openUserProfileModal = findByCodeLazy('type:"USER_PROFILE_MODAL_OPEN"');
+
+export const ExpressionPickerStore = mapMangledModuleLazy("expression-picker-last-active-view", {
+    openExpressionPicker: filters.byCode(/setState\({activeView:(?:(?!null)\i),activeViewType:/),
+    closeExpressionPicker: filters.byCode("setState({activeView:null"),
+    toggleMultiExpressionPicker: filters.byCode(".EMOJI,"),
+    toggleExpressionPicker: filters.byCode(/\i\.activeView===\i&&\i\.activeViewType===\i&&/),
+    setExpressionPickerView: filters.byCode(/setState\({activeView:\i,lastActiveView:/),
+    setSearchQuery: filters.byCode("searchQuery:"),
+    useExpressionPickerStore: filters.byCode(/\(\i,\i=\i\)=>/)
+});
 
 export const UserSummaryItem = common("UserSummaryItem", () => findSilently(filters.componentByCode("defaultRenderUser", "showDefaultAvatarsForNullUsers")));
 

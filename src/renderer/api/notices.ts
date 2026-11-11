@@ -15,10 +15,12 @@ export interface Notice {
 const ID_PREFIX = "majic-notice-";
 const queue: Array<{ id: string } & Notice> = [];
 let current: string | null = null;
+let currentNotice: ({ id: string } & Notice) | null = null;
 let nextId = 0;
 
 function show(notice: { id: string } & Notice) {
     current = notice.id;
+    currentNotice = notice;
     FluxDispatcher.dispatch({
         type: "NOTICE_SHOW",
         notice: {
@@ -49,9 +51,13 @@ export function dismissNotice(id?: string) {
 
 export function _showNextNotice() {
     current = null;
+    currentNotice = null;
     const next = queue.shift();
     if (next) show(next);
 }
 
 export const _isMajicNotice = (notice: { id?: unknown } | null | undefined) =>
     typeof notice?.id === "string" && notice.id.startsWith(ID_PREFIX);
+
+export const isNoticeShownOrQueued = (message: Notice["message"]) =>
+    currentNotice?.message === message || queue.some(notice => notice.message === message);

@@ -2,7 +2,7 @@
  * Majic — Discord helpers
  */
 
-import { ComponentDispatch, FluxDispatcher, i18n, MessageActions, openMediaModal, showToast, Stores, UserSettingsActionCreators } from "@webpack/common";
+import { ComponentDispatch, FluxDispatcher, i18n, MessageActions, openMediaModal, openUserProfileModal, showToast, Stores, UserSettingsActionCreators, UserUtils } from "@webpack/common";
 import { t } from "@i18n";
 
 import { runtimeHashMessageKey } from "./intlHash";
@@ -79,4 +79,23 @@ export function copyToClipboard(text: string): Promise<void> {
 export async function copyWithToast(text: string, toastMessage = t("ui.copied")) {
     await copyToClipboard(text);
     showToast({ text: toastMessage, variant: "success" });
+}
+
+export function getGuildAcronym(guild: { name: string }): string {
+    return guild.name
+        .replaceAll("'s ", " ")
+        .replace(/\w+/g, m => m[0])
+        .replace(/\s/g, "");
+}
+
+export async function openUserProfile(id: string) {
+    const user = await UserUtils.getUser(id);
+    if (!user) throw new Error("No such user: " + id);
+
+    openUserProfileModal({
+        userId: id,
+        guildId: Stores.SelectedGuildStore.getGuildId(),
+        channelId: Stores.SelectedChannelStore.getChannelId(),
+        sourceAnalyticsLocations: ["username", "user profile popout"]
+    });
 }

@@ -88,6 +88,32 @@ export function getDefaultValue(def: PluginSettingDef): unknown {
     return def.default;
 }
 
+const nestedProxies = new WeakMap<object, any>();
+
+function makeNestedProxy(target: object, onChange: () => void): any {
+    const cached = nestedProxies.get(target);
+    if (cached) return cached;
+
+    const proxy = new Proxy(target, {
+        get(obj, key, receiver) {
+            const value = Reflect.get(obj, key, receiver);
+            return typeof value === "object" && value !== null ? makeNestedProxy(value, onChange) : value;
+        },
+        set(obj, key, value, receiver) {
+            const result = Reflect.set(obj, key, value, receiver);
+            onChange();
+            return result;
+        },
+        deleteProperty(obj, key) {
+            const result = Reflect.deleteProperty(obj, key);
+            onChange();
+            return result;
+        }
+    });
+    nestedProxies.set(target, proxy);
+    return proxy;
+}
+
 export function definePluginSettings<D extends SettingsDefinition>(def: D): DefinedSettings<D> {
     let storeProxy: any;
 
@@ -106,6 +132,14 @@ export function definePluginSettings<D extends SettingsDefinition>(def: D): Defi
                 storeProxy = {
                     target,
                     proxy: new Proxy(target, {
+                        get(obj, key, receiver) {
+                            const value = Reflect.get(obj, key, receiver);
+                            if (typeof value !== "object" || value === null || typeof key !== "string") return value;
+                            return makeNestedProxy(value, () => {
+                                saveSettings();
+                                notifyChange(defined.pluginName, key);
+                            });
+                        },
                         set(obj, key, value) {
                             obj[key as string] = value;
                             saveSettings();
@@ -131,6 +165,6 @@ export function initPluginSettings(name: string, enabledByDefault: boolean, defi
     for (const [key, def] of Object.entries<PluginSettingDef>(defined.def)) {
         if (stored[key] !== undefined) continue;
         const value = getDefaultValue(def);
-        if (value !== undefined) stored[key] = value;
+        if (value !== undefined) stored[key] = typeof value === "object" && value !== null ? structuredClone(value) : value;
     }
 }

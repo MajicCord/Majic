@@ -84,3 +84,32 @@ export class Queue {
         return this.queue.length;
     }
 }
+
+export const classes = (...names: Array<string | false | null | undefined>) => names.filter(Boolean).join(" ");
+
+export type AwaiterResult<T> = [value: T, error: unknown, pending: boolean];
+
+export function useAwaiter<T>(factory: () => Promise<T>, options: { fallbackValue: T; deps?: unknown[]; onError?(error: unknown): void; onSuccess?(value: T): void }): AwaiterResult<T> {
+    const [state, setState] = useState({ value: options.fallbackValue, error: null as unknown, pending: true });
+
+    useEffect(() => {
+        let isAlive = true;
+        if (!state.pending) setState({ ...state, pending: true });
+
+        factory()
+            .then(value => {
+                if (!isAlive) return;
+                setState({ value, error: null, pending: false });
+                options.onSuccess?.(value);
+            })
+            .catch(error => {
+                if (!isAlive) return;
+                setState({ value: options.fallbackValue, error, pending: false });
+                options.onError?.(error);
+            });
+
+        return () => void (isAlive = false);
+    }, options.deps ?? []);
+
+    return [state.value, state.error, state.pending];
+}

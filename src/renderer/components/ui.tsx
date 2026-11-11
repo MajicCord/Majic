@@ -25,6 +25,13 @@ const CSS = `
 .majic-button:hover { filter: brightness(1.1); }
 .majic-button[data-variant="secondary"] { background: var(--border-subtle, #4e5058); color: var(--text-default); }
 .majic-button[data-variant="danger"] { background: var(--status-danger, #da373c); }
+.majic-button:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+.majic-input:read-only { opacity: .7; }
+.majic-expandable { border-radius: 8px; background: var(--background-base-lower); border: 1px solid var(--border-subtle); }
+.majic-expandable-header { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; padding: 10px 12px; border: none; background: none; color: var(--text-default); font-family: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+.majic-expandable-chevron { display: flex; color: var(--interactive-icon-default); transition: transform .15s; }
+.majic-expandable[data-open="true"] .majic-expandable-chevron { transform: rotate(180deg); }
+.majic-expandable-content { padding: 0 12px 12px; }
 .majic-dropdown { position: relative; width: 100%; }
 .majic-dropdown-button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--background-base-lowest, #1e1f22); color: var(--text-default); font-size: 14px; font-family: inherit; text-align: left; cursor: pointer; transition: border-color .15s; }
 .majic-dropdown-button:hover { border-color: var(--interactive-muted, #4e5058); }
@@ -74,12 +81,32 @@ export function Switch({ checked, onChange, disabled, label }: { checked: boolea
     );
 }
 
-export function Button({ children, onClick, variant = "primary" }: { children: ReactNode; onClick(): void; variant?: "primary" | "secondary" | "danger" }) {
-    return <button type="button" className="majic-button" data-variant={variant} onClick={onClick}>{children}</button>;
+export function Button({ children, onClick, variant = "primary", disabled, className }: { children: ReactNode; onClick(): void; variant?: "primary" | "secondary" | "danger"; disabled?: boolean; className?: string }) {
+    return <button type="button" className={className ? `majic-button ${className}` : "majic-button"} data-variant={variant} disabled={disabled} onClick={onClick}>{children}</button>;
 }
 
-export function TextInput({ value, onChange, placeholder, type = "text" }: { value: string; onChange(value: string): void; placeholder?: string; type?: string }) {
-    return <input className="majic-input" type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.currentTarget.value)} />;
+export function TextInput({ value, onChange, placeholder, type = "text", onBlur, readOnly, spellCheck }: { value: string; onChange(value: string): void; placeholder?: string; type?: string; onBlur?(): void; readOnly?: boolean; spellCheck?: boolean }) {
+    return <input className="majic-input" type={type} value={value} placeholder={placeholder} readOnly={readOnly} spellCheck={spellCheck} onBlur={onBlur} onChange={e => onChange(e.currentTarget.value)} />;
+}
+
+export function ExpandableSection({ children, renderContent }: { children: ReactNode; renderContent(): ReactNode }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="majic-expandable" data-open={open}>
+            <div
+                role="button"
+                tabIndex={0}
+                className="majic-expandable-header"
+                aria-expanded={open}
+                onClick={() => setOpen(!open)}
+                onKeyDown={e => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setOpen(!open))}
+            >
+                <div style={{ flex: 1, minWidth: 0, display: "flex" }}>{children}</div>
+                <span className="majic-expandable-chevron"><DiscordIcon name="ChevronSmallDownIcon" size={18} /></span>
+            </div>
+            {open && <div className="majic-expandable-content">{renderContent()}</div>}
+        </div>
+    );
 }
 
 export function TextArea({ value, onChange, placeholder }: { value: string; onChange(value: string): void; placeholder?: string }) {

@@ -68,8 +68,8 @@ function OptionEditor({ name, def, settings, label, onRestartNeeded }: OptionEdi
                 </div>
             ) : (
                 <>
-                    <Text>{label}</Text>
-                    <div style={{ marginTop: 6 }}>{editor}</div>
+                    {label && <Text>{label}</Text>}
+                    <div style={{ marginTop: label ? 6 : 0 }}>{editor}</div>
                 </>
             )}
         </div>
