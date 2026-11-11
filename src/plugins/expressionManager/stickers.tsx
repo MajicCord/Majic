@@ -242,7 +242,7 @@ export function buildStickerLinkItems(sticker: StickerItem, ParentComponent: Rea
                 label={s("openStickerLink")}
                 leadingAccessory={{ type: "icon", icon: LinkIcon }}
                 trailingIndicator={{ type: "icon", icon: ExternalIcon }}
-                action={() => window.open(formatStickerURL(sticker, 512), "_blank")}
+                action={() => MajicNative.openExternal(formatStickerURL(sticker, 512))}
             />
         </ParentComponent>
     );
