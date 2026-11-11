@@ -14,6 +14,12 @@ export interface Settings {
     plugins: Record<string, PluginSettings>;
     useQuickCss: boolean;
     enabledThemes: string[];
+    nativeTitleBar: boolean;
+    transparent: boolean;
+    disableMinSize: boolean;
+    winCtrlQ: boolean;
+    windowsMaterial: "none" | "mica" | "tabbed" | "acrylic";
+    macosVibrancyStyle?: string;
     themeLinks: string[];
     notifications: {
         useNative: "always" | "not-focused" | "never";
@@ -25,6 +31,11 @@ const DEFAULTS: Settings = {
     plugins: {},
     useQuickCss: true,
     enabledThemes: [],
+    nativeTitleBar: false,
+    transparent: false,
+    disableMinSize: false,
+    winCtrlQ: false,
+    windowsMaterial: "none",
     themeLinks: [],
     notifications: {
         useNative: "not-focused",

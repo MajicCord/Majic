@@ -8,7 +8,8 @@ import { initPluginNatives } from "./ipcPlugins";
 import { DATA_DIR, QUICK_CSS_FILE, RendererSettings } from "./settings";
 import { initThemes } from "./themes";
 import { persistAfterUpdates } from "./persistAfterUpdates";
-import electron, { app, ipcMain, session, shell, type BrowserWindowConstructorOptions } from "electron";
+import electron, { app, ipcMain, Menu, session, shell, type BrowserWindowConstructorOptions } from "electron";
+import { release } from "node:os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -79,15 +80,75 @@ function initMajic() {
         e.returnValue = readFileSync(join(DIST_DIR, "renderer.js"), "utf-8");
     });
 
+    ipcMain.on(IpcEvents.SUPPORTS_WINDOWS_MATERIAL, e => {
+        e.returnValue = process.platform === "win32" && Number(release().split(".")[2]) >= 22621;
+    });
+    ipcMain.handle(IpcEvents.RELAUNCH, () => {
+        app.relaunch();
+        app.exit();
+    });
+
+    const windowSettings = RendererSettings.store;
+
+    if (process.platform === "win32" && windowSettings.winCtrlQ) {
+        const originalBuild = Menu.buildFromTemplate;
+        Menu.buildFromTemplate = function (template) {
+            if (template[0]?.label === "&File") {
+                const { submenu } = template[0];
+                if (Array.isArray(submenu)) {
+                    submenu.push({
+                        label: "Quit (Hidden)",
+                        visible: false,
+                        acceleratorWorksWhenHidden: true,
+                        accelerator: "Control+Q",
+                        click: () => app.quit()
+                    });
+                }
+            }
+            return originalBuild.call(this, template);
+        };
+    }
+
     class BrowserWindow extends electron.BrowserWindow {
         constructor(options: BrowserWindowConstructorOptions = {}) {
-            if (options.webPreferences?.preload && options.title) {
-                const originalPreload = options.webPreferences.preload;
-                options.webPreferences.preload = join(DIST_DIR, "preload.js");
-                options.webPreferences.sandbox = false;
-                process.env.MAJIC_DISCORD_PRELOAD = originalPreload;
+            if (!options.webPreferences?.preload || !options.title) {
+                super(options);
+                return;
             }
+
+            const { nativeTitleBar, disableMinSize, transparent, macosVibrancyStyle, windowsMaterial } = windowSettings;
+
+            const originalPreload = options.webPreferences.preload;
+            options.webPreferences.preload = join(DIST_DIR, "preload.js");
+            options.webPreferences.sandbox = false;
+
+            if (nativeTitleBar) delete options.frame;
+
+            if (disableMinSize) {
+                options.minWidth = 0;
+                options.minHeight = 0;
+            }
+
+            if (transparent) {
+                options.transparent = true;
+                options.backgroundColor = "#00000000";
+            }
+
+            if (process.platform === "darwin" && macosVibrancyStyle) {
+                options.vibrancy = macosVibrancyStyle;
+                options.backgroundColor = "#00000000";
+            }
+
+            if (process.platform === "win32" && windowsMaterial && windowsMaterial !== "none") {
+                options.backgroundMaterial = windowsMaterial;
+                options.backgroundColor = "#00000000";
+            }
+
+            process.env.MAJIC_DISCORD_PRELOAD = originalPreload;
+
             super(options);
+
+            if (disableMinSize) this.setMinimumSize = () => { };
         }
     }
 

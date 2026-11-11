@@ -19,5 +19,7 @@ export const enum IpcEvents {
     OPEN_QUICK_CSS = "MajicOpenQuickCss",
     INIT_FILE_WATCHERS = "MajicInitFileWatchers",
     QUICK_CSS_UPDATE = "MajicQuickCssUpdate",
-    THEME_UPDATE = "MajicThemeUpdate"
+    THEME_UPDATE = "MajicThemeUpdate",
+    SUPPORTS_WINDOWS_MATERIAL = "MajicSupportsWindowsMaterial",
+    RELAUNCH = "MajicRelaunch"
 }

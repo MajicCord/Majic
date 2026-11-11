@@ -18,6 +18,9 @@ for (const [plugin, methods] of Object.entries(pluginIpcMap)) {
 const MajicNative = {
     pluginHelpers,
     openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IpcEvents.OPEN_EXTERNAL, url),
+    relaunch: (): Promise<void> => ipcRenderer.invoke(IpcEvents.RELAUNCH),
+    supportsWindowsMaterial: (): boolean => ipcRenderer.sendSync(IpcEvents.SUPPORTS_WINDOWS_MATERIAL),
+    platform: process.platform,
     openSettingsFolder: (): Promise<void> => ipcRenderer.invoke(IpcEvents.OPEN_SETTINGS_FOLDER),
     themes: {
         getThemesList: (): Promise<Array<Record<string, string | undefined> & { fileName: string; name: string; author: string; description: string }>> => ipcRenderer.invoke(IpcEvents.GET_THEMES_LIST),
