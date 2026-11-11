@@ -2,7 +2,7 @@
  * Majic — build script
  */
 
-import { context, build } from "esbuild";
+import { context, build, transform } from "esbuild";
 import { readdirSync, existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -56,13 +56,33 @@ const pluginNativesGlob = {
             const imports = natives.map(({ file }, i) => `import * as n${i} from ${JSON.stringify(file)};`);
             const entries = natives.map(({ name }, i) => `${JSON.stringify(name)}: n${i}`);
             return {
-                contents: `${imports.join("
-")}
-export default { ${entries.join(", ")} };`,
+                contents: `${imports.join("\n")}\nexport default { ${entries.join(", ")} };`,
                 resolveDir: PLUGINS_DIR,
                 loader: "ts",
                 watchDirs: [PLUGINS_DIR]
             };
+        });
+    }
+};
+
+const fileUris = {
+    name: "majic-file-uris",
+    setup(b) {
+        b.onResolve({ filter: /^file:\/\/.+/ }, args => ({
+            namespace: "majic-file-uri",
+            path: join(args.resolveDir, args.path.slice("file://".length).split("?")[0]),
+            pluginData: { uri: args.path }
+        }));
+        b.onLoad({ filter: /.*/, namespace: "majic-file-uri" }, async ({ path, pluginData: { uri } }) => {
+            const { searchParams } = new URL(uri);
+            const base64 = searchParams.has("base64");
+            let content = readFileSync(path, base64 ? "base64" : "utf-8");
+            if (searchParams.has("minify") && /\.[cm]?[jt]s$/.test(path)) {
+                content = (await transform(content, { minify: true, loader: path.endsWith("ts") ? "ts" : "js" })).code;
+            } else if (searchParams.get("trim") !== "false") {
+                content = content.trimEnd();
+            }
+            return { contents: `export default ${JSON.stringify(content)};` };
         });
     }
 };
@@ -85,7 +105,7 @@ const configs = [
         platform: "node",
         format: "cjs",
         external: ["electron", "original-fs"],
-        plugins: [pluginNativesGlob]
+        plugins: [pluginNativesGlob, fileUris]
     },
     {
         ...common,
@@ -102,7 +122,7 @@ const configs = [
         platform: "browser",
         format: "iife",
         globalName: "Majic",
-        plugins: [pluginsGlob]
+        plugins: [pluginsGlob, fileUris]
     }
 ];
 
