@@ -52,6 +52,7 @@ const CSS = `
 .majic-slider-value { min-width: 36px; text-align: right; color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .majic-icon-button { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; border: none; background: none; color: var(--interactive-icon-default); cursor: pointer; font-size: 16px; }
 .majic-icon-button:hover { background: var(--background-mod-subtle); color: var(--interactive-icon-hover); }
+.majic-reporter-list { margin: 4px 0 0; max-height: 220px; overflow: auto; padding: 8px; border-radius: 6px; background: var(--background-base-lowest, #1e1f22); color: var(--text-default); font-family: var(--font-code, monospace); font-size: 12px; white-space: pre-wrap; word-break: break-all; user-select: text; }
 .majic-notice-card { padding: 12px 16px; border-radius: 8px; background: var(--info-warning-background, rgba(240,177,50,.1)); border: 1px solid var(--info-warning-foreground, #f0b132); }
 `;
 

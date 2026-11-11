@@ -15,6 +15,9 @@ export interface WebpackRequire {
     c: Record<PropertyKey, { id: PropertyKey; loaded: boolean; exports: any }>;
     m: Record<PropertyKey, ModuleFactory>;
     e(chunkId: PropertyKey): Promise<unknown>;
+    u(chunkId: PropertyKey): string;
+    p: string;
+    f: Partial<Record<string, (...args: any[]) => unknown>>;
 }
 
 export type FilterFn = (value: any) => boolean;
@@ -30,6 +33,19 @@ export const onceReady = new Promise<void>(resolve => resolveReady = resolve);
 export const _resolveReady = () => resolveReady();
 
 export const waitForSubscriptions = new Map<FilterFn, CallbackFn>();
+export const factoryListeners = new Set<(factory: ModuleFactory, id: PropertyKey) => void>();
+
+export interface LazySearch {
+    method: string;
+    args: unknown[];
+    test(): unknown;
+}
+
+export const lazyWebpackSearchHistory: LazySearch[] = [];
+
+function recordSearch(method: string, args: unknown[], test: () => unknown) {
+    lazyWebpackSearchHistory.push({ method, args, test });
+}
 export const moduleListeners = new Set<CallbackFn>();
 
 export function _initWebpack(require: WebpackRequire) {
@@ -254,22 +270,45 @@ function findOrReport(method: string, filter: FilterFn, args: unknown[], options
     return match;
 }
 
-export const findLazy = (filter: FilterFn): any => proxyLazy(() => find(filter));
+export const findLazy = (filter: FilterFn): any => {
+    recordSearch("find", [filter], () => find(filter, { isIndirect: true }));
+    return proxyLazy(() => find(filter));
+};
 
 export const findByProps = (...props: PropsFilter) => findOrReport("findByProps", filters.byProps(...props), props);
-export const findByPropsLazy = (...props: PropsFilter): any => proxyLazy(() => findByProps(...props));
+export const findByPropsLazy = (...props: PropsFilter): any => {
+    recordSearch("findByProps", props, () => find(filters.byProps(...props), { isIndirect: true }));
+    return proxyLazy(() => findByProps(...props));
+};
 
 export const findByCode = (...code: CodeFilter) => findOrReport("findByCode", filters.byCode(...code), code);
-export const findByCodeLazy = (...code: CodeFilter): any => proxyLazy(() => findByCode(...code));
+export const findByCodeLazy = (...code: CodeFilter): any => {
+    recordSearch("findByCode", code, () => find(filters.byCode(...code), { isIndirect: true }));
+    return proxyLazy(() => findByCode(...code));
+};
 
 export const findComponentByCode = (...code: CodeFilter) => findOrReport("findComponentByCode", filters.componentByCode(...code), code);
-export const findComponentByCodeLazy = <P extends object = any>(...code: CodeFilter) => LazyComponent<P>(() => findComponentByCode(...code));
-export const findComponentLazy = <P extends object = any>(filter: FilterFn) => LazyComponent<P>(() => findOrReport("findComponent", filter, [filter]));
-export const findExportedComponentLazy = <P extends object = any>(...props: PropsFilter) =>
-    LazyComponent<P>(() => findOrReport("findExportedComponent", filters.byProps(...props), props)?.[props[0]]);
+export const findComponentByCodeLazy = <P extends object = any>(...code: CodeFilter) => {
+    recordSearch("findComponentByCode", code, () => find(filters.componentByCode(...code), { isIndirect: true }));
+    return LazyComponent<P>(() => findComponentByCode(...code));
+};
+export const findComponentLazy = <P extends object = any>(filter: FilterFn) => {
+    recordSearch("findComponent", [filter], () => find(filter, { isIndirect: true }));
+    return LazyComponent<P>(() => findOrReport("findComponent", filter, [filter]));
+};
+export const findExportedComponentLazy = <P extends object = any>(...props: PropsFilter) => {
+    recordSearch("findExportedComponent", props, () => find(filters.byProps(...props), { isIndirect: true })?.[props[0]]);
+    return LazyComponent<P>(() => findOrReport("findExportedComponent", filters.byProps(...props), props)?.[props[0]]);
+};
 
-export const proxyLazyWebpack = <T = any>(factory: () => T, maxTries?: number) => proxyLazy<T>(factory, maxTries);
-export const LazyComponentWebpack = <P extends object = any>(factory: () => any, maxTries?: number) => LazyComponent<P>(factory, maxTries);
+export const proxyLazyWebpack = <T = any>(factory: () => T, maxTries?: number) => {
+    recordSearch("proxyLazyWebpack", [factory], factory);
+    return proxyLazy<T>(factory, maxTries);
+};
+export const LazyComponentWebpack = <P extends object = any>(factory: () => any, maxTries?: number) => {
+    recordSearch("LazyComponentWebpack", [factory], factory);
+    return LazyComponent<P>(factory, maxTries);
+};
 
 const storeCache = new Map<string, any>();
 
@@ -290,7 +329,10 @@ export function findStore(name: string) {
     return store ?? null;
 }
 
-export const findStoreLazy = (name: string): any => proxyLazy(() => findStore(name));
+export const findStoreLazy = (name: string): any => {
+    recordSearch("findStore", [name], () => find(filters.byStoreName(name), { isIndirect: true }));
+    return proxyLazy(() => findStore(name));
+};
 
 export function mapMangledCssClasses<S extends string>(module: object, classes: readonly S[]) {
     const strings = Object.values(module).filter((v): v is string => typeof v === "string");
@@ -306,7 +348,10 @@ export function findCssClasses<S extends string>(...classes: S[]): Record<S, str
     return module ? mapMangledCssClasses(module, classes) : {} as Record<S, string>;
 }
 
-export const findCssClassesLazy = <S extends string>(...classes: S[]) => proxyLazy(() => findCssClasses(...classes));
+export const findCssClassesLazy = <S extends string>(...classes: S[]) => {
+    recordSearch("findCssClasses", classes, () => find(filters.byClassNames(...classes), { isIndirect: true, topLevelOnly: true }));
+    return proxyLazy(() => findCssClasses(...classes));
+};
 
 export function search(...code: CodeFilter): Record<string, ModuleFactory> {
     if (!wreq) return {};
@@ -352,8 +397,15 @@ export function mapMangledModule<S extends string>(code: string | RegExp | CodeF
     return mapped;
 }
 
-export const mapMangledModuleLazy = <S extends string>(code: string | RegExp | CodeFilter, mappers: Record<S, FilterFn>, includeHidden = false) =>
-    proxyLazy(() => mapMangledModule(code, mappers, includeHidden));
+export const mapMangledModuleLazy = <S extends string>(code: string | RegExp | CodeFilter, mappers: Record<S, FilterFn>, includeHidden = false) => {
+    recordSearch("mapMangledModule", [code, mappers], () => {
+        const mapped = mapMangledModule(code, mappers, includeHidden);
+        const missing = Object.keys(mappers).filter(key => mapped[key as S] == null);
+        if (missing.length) throw new Error(`missing mappings: ${missing.join(", ")}`);
+        return mapped;
+    });
+    return proxyLazy(() => mapMangledModule(code, mappers, includeHidden));
+};
 
 export const DefaultExtractAndLoadChunksRegex = /(?:(?:Promise\.all\(\[)?((?:\i\.e\("?[^)]+?"?\),?)+?)(?:\]\))?|Promise\.resolve\(\))\.then\(\i\.bind\(\i,"?([^)]+?)"?(?:,[^)]+?)?\)\)/;
 const ChunkIdsRegex = /\((?:"([^"]+?)"|([\de]+?))\)/g;
@@ -395,8 +447,10 @@ export async function extractAndLoadChunks(code: CodeFilter, matcher: RegExp = D
     return true;
 }
 
-export const extractAndLoadChunksLazy = (code: CodeFilter, entryPointMatcher?: RegExp) =>
-    makeLazy(() => extractAndLoadChunks(code, entryPointMatcher));
+export const extractAndLoadChunksLazy = (code: CodeFilter, entryPointMatcher?: RegExp) => {
+    recordSearch("extractAndLoadChunks", [code, entryPointMatcher], async () => (await extractAndLoadChunks(code, entryPointMatcher)) || null);
+    return makeLazy(() => extractAndLoadChunks(code, entryPointMatcher));
+};
 
 export function waitFor(filter: string | PropsFilter | FilterFn, callback: CallbackFn) {
     if (typeof filter === "string") filter = filters.byProps(filter);

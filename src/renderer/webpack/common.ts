@@ -6,7 +6,7 @@ import { proxyLazy } from "@utils/lazy";
 import { LazyComponent } from "@utils/lazyReact";
 import { Logger } from "@utils/logger";
 
-import { _resolveReady, filters, find, findByCodeLazy, findCssClassesLazy, findComponentByCodeLazy, findStore, type FilterFn, mapMangledModule, mapMangledModuleLazy, requireModuleByCode, search, waitFor, wreq } from "./webpack";
+import { _resolveReady, filters, find, findByCodeLazy, findCssClassesLazy, findComponentByCodeLazy, findStore, type FilterFn, mapMangledModule, mapMangledModuleLazy, lazyWebpackSearchHistory, requireModuleByCode, search, waitFor, wreq } from "./webpack";
 
 const logger = new Logger("Commons", "#f1fa8c");
 
@@ -14,6 +14,7 @@ const registry = new Map<string, () => unknown>();
 
 function common<T = any>(name: string, resolve: () => T): T {
     registry.set(name, resolve);
+    lazyWebpackSearchHistory.push({ method: "common", args: [name], test: resolve });
     return proxyLazy(resolve);
 }
 

@@ -5,6 +5,7 @@
 import { saveSettings, settings, type Settings } from "@api/settings";
 import { downloadSettingsBackup, uploadSettingsBackup } from "@api/settingsBackup";
 import { t, useLocale } from "@i18n";
+import type { ReporterResult } from "@renderer/reporter";
 import { DiscordIcon, React, useReducer, useState } from "@webpack/common";
 
 import { Button, Card, Heading, Page, Select, Slider, SubHeading, Switch, Text } from "../ui";
@@ -97,6 +98,50 @@ function WindowSettings({ update }: { update(change: () => void): void }) {
     );
 }
 
+function ReporterCard() {
+    const [running, setRunning] = useState(false);
+    const [result, setResult] = useState<ReporterResult | null>(null);
+
+    const start = async () => {
+        setRunning(true);
+        setResult(null);
+        try {
+            setResult(await Majic.Reporter.run());
+        } finally {
+            setRunning(false);
+        }
+    };
+
+    return (
+        <Card>
+            <SubHeading>{t("majic.developer")}</SubHeading>
+            <Text muted>{t("majic.reporterHint")}</Text>
+            <div style={{ marginTop: 10 }}>
+                <Button onClick={() => void start()} disabled={running}>{t("majic.runReporter")}</Button>
+            </div>
+            {running && <div style={{ marginTop: 10 }}><Text muted>{t("majic.reporterRunning")}</Text></div>}
+            {result && (
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <Text muted>{t("majic.reporterDone", { seconds: Math.round(result.duration / 100) / 10, chunks: result.loadedChunks })}</Text>
+                    {!result.pendingPatches.length && !result.failedSearches.length && <Text>{t("majic.reporterAllGood")}</Text>}
+                    {result.pendingPatches.length > 0 && (
+                        <div>
+                            <Text>{t("majic.pendingPatches", { count: result.pendingPatches.length })}</Text>
+                            <pre className="majic-reporter-list">{result.pendingPatches.map(p => `${p.plugin}: ${p.find}`).join("\n")}</pre>
+                        </div>
+                    )}
+                    {result.failedSearches.length > 0 && (
+                        <div>
+                            <Text>{t("majic.failedSearches", { count: result.failedSearches.length })}</Text>
+                            <pre className="majic-reporter-list">{result.failedSearches.map(f => `${f.method}(${f.args}) ${f.error ?? ""}`).join("\n")}</pre>
+                        </div>
+                    )}
+                </div>
+            )}
+        </Card>
+    );
+}
+
 export function MajicTab() {
     useLocale();
     const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -140,6 +185,8 @@ export function MajicTab() {
             </Card>
 
             <WindowSettings update={update} />
+
+            <ReporterCard />
 
             <Card>
                 <SubHeading>{t("majic.data")}</SubHeading>

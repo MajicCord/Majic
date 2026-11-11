@@ -6,7 +6,7 @@
 import { Logger } from "@utils/logger";
 import type { Patch, PatchReplacement } from "@utils/types";
 
-import { _initWebpack, matchExports, moduleListeners, type ModuleFactory, quarantineUnsafeExports, type WebpackRequire, waitForSubscriptions, wreq } from "./webpack";
+import { _initWebpack, factoryListeners, matchExports, moduleListeners, type ModuleFactory, quarantineUnsafeExports, type WebpackRequire, waitForSubscriptions, wreq } from "./webpack";
 
 const logger = new Logger("Webpack", "#8be9fd");
 
@@ -210,6 +210,14 @@ function updateExistingFactory(modules: WebpackRequire["m"], id: PropertyKey, fa
 }
 
 function proxyFactoryAndUpdateExisting(modules: WebpackRequire["m"], id: PropertyKey, factory: ModuleFactory, receiver: unknown, ignoreExistingInTarget = false) {
+    for (const listener of factoryListeners) {
+        try {
+            listener(factory, id);
+        } catch (err) {
+            logger.error("Error in a webpack factory listener", err);
+        }
+    }
+
     const proxied = new Proxy(factory, moduleFactoryHandler);
     if (updateExistingFactory(modules, id, factory, proxied, ignoreExistingInTarget)) return true;
     return Reflect.set(modules, id, proxied, receiver);

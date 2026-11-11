@@ -10,7 +10,9 @@ import { initWebpackHook, reportPendingPatches } from "./webpack/patchWebpack";
 import * as Plugins from "./plugins";
 import * as Webpack from "./webpack";
 
-export { Plugins, Webpack, settings };
+import * as Reporter from "./reporter";
+
+export { Plugins, Reporter, Webpack, settings };
 export const version = "0.1.0";
 
 const logger = new Logger("Core");
