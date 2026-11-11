@@ -1,0 +1,24 @@
+{
+  "name": "majic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Discord client mod",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "inject": "node scripts/inject.mjs",
+    "uninject": "node scripts/inject.mjs --uninject",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^33.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@11.4.0",
+  "dependencies": {
+    "@intrnl/xxhash64": "^0.1.2"
+  }
+}

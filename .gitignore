@@ -1,0 +1,36 @@
+# Dependencies & build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Only pnpm is used
+package-lock.json
+yarn.lock
+bun.lock
+
+# Logs
+*.log
+.pnpm-debug.log*
+
+# Secrets (Discord tokens, API keys...)
+.env
+.env.*
+
+# Private / local plugins
+src/userplugins/
+
+# Local Majic data (settings.json, quickCss.css) if copied into the repo
+/settings/
+
+# Reference clones
+_ref/
+
+# Binaries
+*.exe
+
+# Editors & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
