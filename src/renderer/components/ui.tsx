@@ -7,7 +7,6 @@ import { DiscordIcon, React, useEffect, useRef, useState } from "@webpack/common
 import type { ReactNode } from "react";
 
 const CSS = `
-:root { --majic-accent: #ff2d55; }
 .majic-page { display: flex; flex-direction: column; gap: 16px; color: var(--text-normal); font-family: var(--font-primary); }
 .majic-heading { margin: 0; color: var(--header-primary); font-size: 20px; font-weight: 600; line-height: 24px; }
 .majic-subheading { margin: 0 0 8px; color: var(--header-secondary); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }

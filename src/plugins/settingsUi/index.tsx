@@ -4,6 +4,7 @@
 
 import { MajicTab } from "@components/settings/MajicTab";
 import { PluginsTab } from "@components/settings/PluginsTab";
+import { ThemesTab } from "@components/settings/ThemesTab";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { Logger } from "@utils/logger";
 import { definePlugin } from "@utils/types";
@@ -89,7 +90,8 @@ export default definePlugin({
                 useTitle: () => "Majic",
                 buildLayout: () => [
                     sidebarItem("majic_main", "Majic", "MagicWandIcon", MajicTab),
-                    sidebarItem("majic_plugins", "Plugins", "AppsIcon", PluginsTab)
+                    sidebarItem("majic_plugins", "Plugins", "PuzzlePieceIcon", PluginsTab),
+                    sidebarItem("majic_themes", "Themes", "PaintbrushThinIcon", ThemesTab)
                 ]
             };
 

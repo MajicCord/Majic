@@ -5,7 +5,7 @@
 import { proxyLazy } from "@utils/lazy";
 import { Logger } from "@utils/logger";
 
-import { _resolveReady, filters, find, findStore, type FilterFn, requireModuleByCode, waitFor } from "./webpack";
+import { _resolveReady, filters, find, findStore, type FilterFn, requireModuleByCode, search, waitFor, wreq } from "./webpack";
 
 const logger = new Logger("Commons", "#f1fa8c");
 
@@ -106,6 +106,7 @@ export const Stores: Record<string, any> = new Proxy({}, {
 });
 
 const icons = new Map<string, unknown>();
+const iconLoads = new Map<string, Promise<unknown>>();
 
 function resolveIcon(name: string) {
     if (!icons.has(name)) {
@@ -115,7 +116,30 @@ function resolveIcon(name: string) {
     return icons.get(name);
 }
 
+function loadIcon(name: string) {
+    if (!iconLoads.has(name)) {
+        iconLoads.set(name, (async () => {
+            const entry = new RegExp(`"\\./${name}\\.web\\.tsx":\\["(\\d+)",\\[([\\d,]*)\\]\\]`);
+            const source = Object.values(search(`"./${name}.web.tsx"`)).map(String)[0];
+            const match = source && entry.exec(source);
+            if (!match) return null;
+
+            const chunks = match[2] ? match[2].split(",").map(Number) : [];
+            await Promise.all(chunks.map(chunk => wreq.e(chunk)));
+            const icon = wreq(match[1])?.[name];
+            if (icon) icons.set(name, icon);
+            return icon;
+        })().catch(() => null));
+    }
+    return iconLoads.get(name)!;
+}
+
 export const DiscordIcon = ({ name, size = 20, color = "currentColor" }: { name: string; size?: number; color?: string }) => {
-    const Icon = resolveIcon(name);
+    const [Icon, setIcon] = useState(() => resolveIcon(name));
+
+    useEffect(() => {
+        if (!Icon) void loadIcon(name).then(loaded => loaded && setIcon(() => loaded));
+    }, [name]);
+
     return Icon ? React.createElement(Icon as any, { size: "custom", width: size, height: size, color }) : null;
 };

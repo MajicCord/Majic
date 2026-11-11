@@ -15,6 +15,7 @@ export const version = "0.1.0";
 const logger = new Logger("Core");
 
 initWebpackHook();
+enableStyle("majic-base", ":root { --majic-accent: #ff2d55; }");
 Plugins.registerPatches();
 Plugins.startAllPlugins("Init");
 Webpack.onceReady.then(() => {
