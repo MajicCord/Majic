@@ -2,7 +2,9 @@
  * Majic — Discord injector
  */
 
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { createPackage, extractFile } from "@electron/asar";
+import { existsSync, mkdtempSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -31,25 +33,47 @@ const appDirs = readdirSync(base)
 if (!appDirs.length) fail(`No app-* folder in ${base}`);
 
 const resources = join(base, appDirs.at(-1), "resources");
-const appDir = join(resources, "app");
+const appAsar = join(resources, "app.asar");
+const originalAsar = join(resources, "_app.asar");
+
+rmSync(join(resources, "app"), { recursive: true, force: true });
 
 if (uninject) {
-    if (!existsSync(appDir)) fail("Majic is not injected.");
-    rmSync(appDir, { recursive: true, force: true });
+    if (!existsSync(originalAsar)) fail("Majic is not injected.");
+    if (!isMajicStub(appAsar)) fail("app.asar was not created by Majic, refusing to touch it.");
+    rmSync(appAsar);
+    renameSync(originalAsar, appAsar);
     console.log(`Majic removed from ${resources}`);
 } else {
     if (!existsSync(PATCHER)) fail("dist/patcher.js not found: run `pnpm build` first.");
-    if (!existsSync(join(resources, "app.asar"))) fail(`app.asar not found in ${resources}`);
+    if (!existsSync(appAsar)) fail(`app.asar not found in ${resources}`);
 
-    mkdirSync(appDir, { recursive: true });
+    if (existsSync(originalAsar)) {
+        if (!isMajicStub(appAsar)) fail("Another client mod is installed (_app.asar exists). Uninstall it first.");
+    } else {
+        renameSync(appAsar, originalAsar);
+    }
+
+    const stubDir = mkdtempSync(join(tmpdir(), "majic-"));
     writeFileSync(
-        join(appDir, "index.js"),
+        join(stubDir, "index.js"),
         `process.env.MAJIC_INJECTOR_DIR = __dirname;\nrequire(${JSON.stringify(PATCHER)});\n`
     );
-    writeFileSync(join(appDir, "package.json"), JSON.stringify({ name: branch.name, main: "index.js" }, null, 4));
+    writeFileSync(join(stubDir, "package.json"), JSON.stringify({ name: branch.name, main: "index.js", majic: true }));
+    await createPackage(stubDir, appAsar);
+    rmSync(stubDir, { recursive: true, force: true });
+
     console.log(`Majic injected into ${resources}`);
 }
 console.log("Fully restart Discord (right-click the tray icon -> Quit) to apply.");
+
+function isMajicStub(asarPath) {
+    try {
+        return JSON.parse(extractFile(asarPath, "package.json").toString()).majic === true;
+    } catch {
+        return false;
+    }
+}
 
 function compareVersions(a, b) {
     const pa = a.split(".").map(Number);

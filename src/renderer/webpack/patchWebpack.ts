@@ -38,6 +38,12 @@ function setWreq(require: WebpackRequire) {
 
 export const moduleListeners = new Set<(exports: any, id: PropertyKey) => void>();
 
+export function reportPendingPatches() {
+    const pending = patches.filter(p => !p.all);
+    if (!pending.length) return logger.info("All patches applied");
+    for (const p of pending) logger.warn(`Patch by ${p.plugin} not applied yet, no module matched: ${p.find}`);
+}
+
 export const SYM_ORIGINAL_FACTORY = Symbol("Majic.originalFactory");
 export const SYM_PATCHED_BY = Symbol("Majic.patchedBy");
 
@@ -113,96 +119,176 @@ function patchFactory(id: PropertyKey, original: ModuleFactory): ModuleFactory {
     if (factory !== original) {
         (factory as any)[SYM_ORIGINAL_FACTORY] = original;
         (original as any)[SYM_PATCHED_BY] = patchedBy;
-        logger.debug(`Module ${String(id)} patched by ${[...patchedBy].join(", ")}`);
+        logger.info(`Module ${String(id)} patched by ${[...patchedBy].join(", ")}`);
     }
     return factory;
 }
 
-function wrapFactory(id: PropertyKey, original: ModuleFactory): ModuleFactory {
-    let patched: ModuleFactory | undefined;
+const SYM_IS_PROXIED_FACTORY = Symbol("Majic.isProxiedFactory");
+const SYM_ORIGINAL_MODULE_FACTORIES = Symbol("Majic.originalModuleFactories");
 
-    const wrapped: ModuleFactory = function (this: unknown, module, exports, require) {
-        if (!wreq && require?.m) setWreq(require);
+const allWebpackInstances = new Set<WebpackRequire>();
+let wreqFallbackApplied = false;
 
-        patched ??= patchFactory(id, original);
+function define(target: object, key: PropertyKey, descriptor: PropertyDescriptor) {
+    if (Object.hasOwn(descriptor, "value")) descriptor.writable = true;
+    return Reflect.defineProperty(target, key, { configurable: true, enumerable: true, ...descriptor });
+}
 
+function defineInWebpackInstances(id: PropertyKey, factory: ModuleFactory) {
+    for (const instance of allWebpackInstances) define(instance.m, id, { value: factory });
+}
+
+function notifyModuleListeners(exports: any, id: PropertyKey) {
+    if (exports == null) return;
+    for (const listener of moduleListeners) {
         try {
-            patched.call(this, module, exports, require);
+            listener(exports, id);
         } catch (err) {
-            if (patched === original) throw err;
-            logger.error(`Patched module ${String(id)} crashed, running the original instead`, err);
-            original.call(this, module, exports, require);
+            logger.error("Error in a module listener", err);
         }
-
-        if (module?.exports == null) return;
-        for (const listener of moduleListeners) {
-            try {
-                listener(module.exports, id);
-            } catch (err) {
-                logger.error("Error in a module listener", err);
-            }
-        }
-    };
-
-    wrapped.toString = original.toString.bind(original);
-    (wrapped as any)[SYM_ORIGINAL_FACTORY] = original;
-    return wrapped;
+    }
 }
 
-type ChunkEntry = [chunkIds: unknown[], modules: Record<PropertyKey, ModuleFactory>, runtime?: (r: WebpackRequire) => void];
+function runFactoryWithWrap(patched: ModuleFactory, id: PropertyKey, thisArg: unknown, args: Parameters<ModuleFactory>) {
+    const original: ModuleFactory = (patched as any)[SYM_ORIGINAL_FACTORY] ?? patched;
+    const [module, exports, require] = args;
 
-const seenChunks = new WeakSet<object>();
+    defineInWebpackInstances(id, original);
 
-function patchChunk(entry: ChunkEntry) {
-    if (!Array.isArray(entry) || seenChunks.has(entry)) return;
-    seenChunks.add(entry);
-
-    const modules = entry[1];
-    if (modules) {
-        for (const id in modules) {
-            if (!(modules[id] as any)[SYM_ORIGINAL_FACTORY]) modules[id] = wrapFactory(id, modules[id]);
+    if (wreq == null && !wreqFallbackApplied) {
+        wreqFallbackApplied = true;
+        if (typeof require === "function" && require.m != null && require.c != null) {
+            logger.warn(`__webpack_require__ was not initialized, falling back to the one passed to module ${String(id)}`);
+            setWreq(require);
         }
     }
 
-    const runtime = entry[2];
-    if (typeof runtime === "function") {
-        entry[2] = function (this: unknown, r: WebpackRequire) {
-            if (!wreq) setWreq(r);
-            return runtime.call(this, r);
-        };
+    let result: unknown;
+    try {
+        result = patched.apply(thisArg, args);
+    } catch (err) {
+        if (patched === original) throw err;
+        logger.error(`Patched module ${String(id)} crashed, running the original instead`, err);
+        return original.apply(thisArg, [module, exports, require]);
     }
+
+    notifyModuleListeners(module?.exports, id);
+    return result;
 }
 
-function hookChunkArray(chunks: unknown[]) {
-    if ((chunks as any).$$majic) return;
-    Object.defineProperty(chunks, "$$majic", { value: true });
+const moduleFactoryHandler: ProxyHandler<ModuleFactory> = {
+    apply(target, thisArg, args: Parameters<ModuleFactory>) {
+        const id = target.name;
+        if ((target as any)[SYM_ORIGINAL_FACTORY] != null) return runFactoryWithWrap(target, id, thisArg, args);
+        return runFactoryWithWrap(patchFactory(id, target), id, thisArg, args);
+    },
+    get(target, key, receiver) {
+        if (key === SYM_IS_PROXIED_FACTORY) return true;
+        const original = (target as any)[SYM_ORIGINAL_FACTORY] ?? target;
+        if (key === "toString") return original.toString.bind(original);
+        return Reflect.get(target, key, receiver);
+    }
+};
 
-    for (const entry of chunks) patchChunk(entry as ChunkEntry);
+function proxyFactory(modules: WebpackRequire["m"], id: PropertyKey, factory: ModuleFactory, receiver: unknown, ignoreExistingInTarget = false) {
+    if ((factory as any)?.[SYM_IS_PROXIED_FACTORY]) return Reflect.set(modules, id, factory, receiver);
 
-    let currentPush: (...items: unknown[]) => number = Array.prototype.push;
-    Object.defineProperty(chunks, "push", {
-        configurable: true,
-        get: () =>
-            function (this: unknown[], ...entries: unknown[]) {
-                for (const entry of entries) patchChunk(entry as ChunkEntry);
-                return currentPush.apply(this, entries);
-            },
-        set(v) {
-            currentPush = v;
-        }
-    });
+    const proxied = new Proxy(factory, moduleFactoryHandler);
+
+    for (const instance of allWebpackInstances) {
+        const instanceModules = (instance.m as any)[SYM_ORIGINAL_MODULE_FACTORIES] ?? instance.m;
+        if (ignoreExistingInTarget && instanceModules === modules) continue;
+        if (!Object.hasOwn(instance.m, id)) continue;
+
+        const existing = instance.m[id as string];
+        if ((existing as any)[SYM_ORIGINAL_FACTORY] != null) (existing as any)[SYM_ORIGINAL_FACTORY] = factory;
+        else defineInWebpackInstances(id, proxied);
+        return true;
+    }
+
+    return Reflect.set(modules, id, proxied, receiver);
 }
+
+const moduleFactoriesHandler: ProxyHandler<WebpackRequire["m"]> = {
+    get(target, key, receiver) {
+        if (key === SYM_ORIGINAL_MODULE_FACTORIES) return target;
+        return Reflect.get(target, key, receiver);
+    },
+    set: proxyFactory
+};
+
+const IGNORED_INSTANCES = ["sentry", "libdiscore", "fast-connect"];
 
 export function initWebpackHook() {
-    let chunks: unknown[] | undefined = window.webpackChunkdiscord_app;
-    if (chunks) hookChunkArray(chunks);
+    define(Function.prototype, "m", {
+        enumerable: false,
+        set(this: WebpackRequire, originalModules: WebpackRequire["m"]) {
+            define(this, "m", { value: originalModules });
 
-    Object.defineProperty(window, "webpackChunkdiscord_app", {
-        configurable: true,
-        get: () => chunks,
-        set(v) {
-            if (Array.isArray(v)) hookChunkArray(v);
-            chunks = v;
+            const { stack } = new Error();
+            if (!stack?.includes("http") || /at \d+? \(/.test(stack) || !String(this).includes("exports:{}")) return;
+
+            const fileName = stack.match(/\/assets\/(.+?\.js)/)?.[1];
+            if (IGNORED_INSTANCES.some(name => fileName?.toLowerCase().includes(name))) return;
+
+            const instance = this;
+
+            const patchThisInstance = () => {
+                if (allWebpackInstances.has(instance)) return;
+                logger.info(`Found webpack module factories${fileName ? ` in ${fileName}` : ""}`);
+                allWebpackInstances.add(instance);
+
+                for (const id in originalModules) proxyFactory(originalModules, id, originalModules[id], originalModules, true);
+                define(instance, "m", { value: new Proxy(originalModules, moduleFactoriesHandler) });
+
+                (instance as any).d = function (exports: object, getters?: Record<PropertyKey, () => unknown>, values?: Record<PropertyKey, unknown>) {
+                    const defineAll = (defs: Record<PropertyKey, unknown> | undefined, kind: "get" | "value") => {
+                        for (const key in defs) {
+                            if (Object.hasOwn(defs, key) && !Object.hasOwn(exports, key)) {
+                                Object.defineProperty(exports, key, { enumerable: true, configurable: true, [kind]: defs[key] });
+                            }
+                        }
+                    };
+                    defineAll(getters, "get");
+                    defineAll(values, "value");
+                };
+            };
+
+            define(instance, "p", {
+                enumerable: false,
+                set(bundlePath: string) {
+                    define(this, "p", { value: bundlePath });
+                    clearTimeout(bundlePathTimeout);
+
+                    if (bundlePath !== "/assets/" || /(?:=>|{return)"[^"]+?"[^=]/.test(String((instance as any).u))) return;
+
+                    if (wreq == null && instance.c != null) {
+                        logger.info(`Main webpack instance found${fileName ? ` in ${fileName}` : ""}`);
+                        setWreq(instance);
+                    }
+                    patchThisInstance();
+                }
+            });
+
+            define(instance, "O", {
+                enumerable: false,
+                set(onChunksLoaded: any) {
+                    define(this, "O", { value: onChunksLoaded });
+                    clearTimeout(onChunksLoadedTimeout);
+
+                    define(onChunksLoaded, "j", {
+                        enumerable: false,
+                        set(j: unknown) {
+                            define(this, "j", { value: j });
+                            if ((instance as any).p == null) patchThisInstance();
+                        }
+                    });
+                }
+            });
+
+            const bundlePathTimeout = setTimeout(() => Reflect.deleteProperty(instance, "p"), 0);
+            const onChunksLoadedTimeout = setTimeout(() => Reflect.deleteProperty(instance, "O"), 0);
         }
     });
 }

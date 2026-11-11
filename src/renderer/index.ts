@@ -4,7 +4,7 @@
 
 import { Logger } from "@utils/logger";
 import { settings } from "@api/settings";
-import { initWebpackHook } from "./webpack/patchWebpack";
+import { initWebpackHook, reportPendingPatches } from "./webpack/patchWebpack";
 import * as Plugins from "./plugins";
 import * as Webpack from "./webpack";
 
@@ -31,6 +31,7 @@ function onDomReady() {
     Plugins.startAllPlugins("DOMContentLoaded");
     injectQuickCss();
     logger.info(`Majic v${version} loaded`);
+    setTimeout(reportPendingPatches, 10_000);
 }
 
 if (document.readyState === "loading") {

@@ -14,7 +14,7 @@ const DIST_DIR = __dirname;
 const injectorDir = process.env.MAJIC_INJECTOR_DIR;
 if (!injectorDir) throw new Error("[Majic] MAJIC_INJECTOR_DIR is not set");
 
-const asarPath = join(injectorDir, "..", "app.asar");
+const asarPath = join(injectorDir, "..", "_app.asar");
 if (!existsSync(asarPath)) throw new Error(`[Majic] app.asar not found: ${asarPath}`);
 
 if (IS_VANILLA) {

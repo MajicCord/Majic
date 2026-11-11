@@ -4,7 +4,7 @@
 
 import { definePlugin } from "@utils/types";
 import { Logger } from "@utils/logger";
-import { filters, waitFor } from "@webpack";
+import { findByProps } from "@webpack";
 
 const logger = new Logger("Hello", "#ffb86c");
 
@@ -24,10 +24,13 @@ export default definePlugin({
         pointer-events: none;
     }`,
 
+    flux: {
+        CONNECTION_OPEN() {
+            logger.info("Logged in as", findByProps("getCurrentUser", "getUser")?.getCurrentUser()?.username);
+        }
+    },
+
     start() {
         logger.info("Hello from Majic!");
-        waitFor(filters.byProps("getCurrentUser", "getUser"), UserStore => {
-            logger.info("Logged in as", UserStore.getCurrentUser()?.username);
-        });
     }
 });

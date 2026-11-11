@@ -19,14 +19,24 @@ export const filters = {
     byDisplayName: (name: string): Filter => m => m?.displayName === name
 };
 
+const PROBE = "__majicProbe" + Math.random().toString(36).slice(2);
+
+function isCatchAll(value: any) {
+    try {
+        return (typeof value === "object" || typeof value === "function") && value[PROBE] !== undefined;
+    } catch {
+        return true;
+    }
+}
+
 function testExports(exports: any, filter: Filter): any {
-    if (exports == null) return undefined;
+    if (exports == null || isCatchAll(exports)) return undefined;
     try {
         if (filter(exports)) return exports;
         if (typeof exports === "object") {
             for (const key in exports) {
                 const v = exports[key];
-                if (v != null && filter(v)) return v;
+                if (v != null && !isCatchAll(v) && filter(v)) return v;
             }
         }
     } catch {

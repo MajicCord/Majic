@@ -8,7 +8,6 @@ declare global {
     interface Window {
         MajicNative: MajicNativeApi;
         Majic: typeof import("./index");
-        webpackChunkdiscord_app: unknown[];
     }
     const MajicNative: MajicNativeApi;
 }
