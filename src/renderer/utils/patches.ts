@@ -1,45 +1,39 @@
 /*
  * Majic — patch canonicalization
- * Adapted from Vencord, GPL-3.0-or-later
  */
 
 import { runtimeHashMessageKey } from "./intlHash";
 import type { PatchReplacement } from "./types";
 
-const IDENTIFIER = String.raw`(?:[A-Za-z_$][\w$]*)`;
+const INTL_TOKEN = /#{intl::([\w$+/]*)(?:::(raw))?}/g;
+const IDENTIFIER_TOKEN = /(?<!\\)((?:\\\\)*)\\i/g;
+const IDENTIFIER = "(?:[A-Za-z_$][\\w$]*)";
+
+const escapeForRegex = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function intlAccessor(key: string, raw: boolean) {
+    const hash = raw ? key : runtimeHashMessageKey(key);
+    return /^\d|[+/]/.test(hash) ? `["${hash}"]` : `.${hash}`;
+}
 
 export function canonicalizeMatch<T extends string | RegExp>(match: T): T {
-    const isString = typeof match === "string";
-    let source = isString ? match : match.source;
+    if (typeof match === "string") {
+        return match.replace(INTL_TOKEN, (_, key, raw) => intlAccessor(key, Boolean(raw))) as T;
+    }
 
-    source = source.replaceAll(/#{intl::([\w$+/]*)(?:::(\w+))?}/g, (_, key: string, modifier?: string) => {
-        const hashed = modifier === "raw" ? key : runtimeHashMessageKey(key);
-        const needsBrackets = !Number.isNaN(Number(hashed[0])) || hashed.includes("+") || hashed.includes("/");
+    const source = match.source
+        .replace(INTL_TOKEN, (_, key, raw) => `(?:${escapeForRegex(intlAccessor(key, Boolean(raw)))})`)
+        .replace(IDENTIFIER_TOKEN, (_, escapes) => escapes + IDENTIFIER);
 
-        if (needsBrackets) {
-            return isString ? `["${hashed}"]` : String.raw`(?:\["${hashed}"\])`.replaceAll("+", "\\+");
-        }
-        return isString ? `.${hashed}` : String.raw`(?:\.${hashed})`;
-    });
-
-    if (isString) return source as T;
-
-    source = source.replaceAll(/(\\*)\\i/g, (m, escapes: string) =>
-        escapes.length % 2 === 0 ? `${escapes}${IDENTIFIER}` : m.slice(1)
-    );
-
-    const regex = new RegExp(source, match.flags);
-    regex.toString = match.toString.bind(match);
-    return regex as T;
+    const canonical = new RegExp(source, match.flags);
+    canonical.toString = () => match.toString();
+    return canonical as T;
 }
 
 export function canonicalizeReplace(replace: PatchReplacement["replace"], pluginName: string): PatchReplacement["replace"] {
     const self = `Majic.Plugins.plugins[${JSON.stringify(pluginName)}]`;
-
-    if (typeof replace === "function") {
-        return (...args) => replace(...args).replaceAll("$self", self);
-    }
-    return replace.replaceAll("$self", self);
+    const inject = (code: string) => code.replaceAll("$self", self);
+    return typeof replace === "function" ? (...args) => inject(replace(...args)) : inject(replace);
 }
 
 export function canonicalizeReplacement(replacement: PatchReplacement, pluginName: string): PatchReplacement {

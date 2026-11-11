@@ -4,7 +4,7 @@
 
 import { definePlugin } from "@utils/types";
 import { Logger } from "@utils/logger";
-import { findByProps } from "@webpack";
+import { findStore } from "@webpack";
 
 const logger = new Logger("Hello", "#ffb86c");
 
@@ -24,13 +24,7 @@ export default definePlugin({
         pointer-events: none;
     }`,
 
-    flux: {
-        CONNECTION_OPEN() {
-            logger.info("Logged in as", findByProps("getCurrentUser", "getUser")?.getCurrentUser()?.username);
-        }
-    },
-
     start() {
-        logger.info("Hello from Majic!");
+        logger.info("Hello from Majic! Logged in as", findStore("UserStore")?.getCurrentUser()?.username);
     }
 });

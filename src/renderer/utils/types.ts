@@ -18,7 +18,7 @@ export interface Patch {
     predicate?(): boolean;
 }
 
-export type StartAt = "Init" | "DOMContentLoaded";
+export type StartAt = "Init" | "DOMContentLoaded" | "WebpackReady";
 
 export interface PluginAuthor {
     name: string;
@@ -90,6 +90,8 @@ export interface PluginDef {
     enabledByDefault?: boolean;
     css?: string;
     startAt?: StartAt;
+    dependencies?: string[];
+    requiresRestart?: boolean;
     settings?: DefinedSettings<any>;
     flux?: Record<string, (event: any) => void>;
     start?(): void;

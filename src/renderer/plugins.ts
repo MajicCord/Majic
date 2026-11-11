@@ -20,10 +20,40 @@ for (const def of allPlugins) {
 }
 saveSettings();
 
+const enabledAsDependency = new Set<string>();
+
+function isEnabledByUser(p: Plugin) {
+    return p.required || getPluginSettings(p.name, p.enabledByDefault ?? false).enabled;
+}
+
 export function isPluginEnabled(name: string) {
     const p = plugins[name];
     if (!p) return false;
-    return p.required || getPluginSettings(name, p.enabledByDefault ?? false).enabled;
+    return isEnabledByUser(p) || enabledAsDependency.has(name);
+}
+
+function enableDependencies(p: Plugin, chain: string[] = []) {
+    for (const name of p.dependencies ?? []) {
+        const dep = plugins[name];
+        if (!dep) {
+            logger.warn(`${p.name} depends on ${name}, which does not exist`);
+            continue;
+        }
+        if (chain.includes(name)) {
+            logger.warn(`Circular dependency: ${[...chain, p.name, name].join(" -> ")}`);
+            continue;
+        }
+        if (isPluginEnabled(name)) continue;
+
+        enabledAsDependency.add(name);
+        enableDependencies(dep, [...chain, p.name]);
+    }
+}
+
+for (const p of Object.values(plugins)) if (isEnabledByUser(p)) enableDependencies(p);
+
+export function pluginRequiresRestart(p: Plugin) {
+    return Boolean(p.requiresRestart || p.patches?.length);
 }
 
 export function registerPatches() {
@@ -96,6 +126,13 @@ function removeStyle(p: Plugin) {
 
 export function startPlugin(p: Plugin) {
     if (p.started) return true;
+    for (const name of p.dependencies ?? []) {
+        const dep = plugins[name];
+        if (dep && !startPlugin(dep)) {
+            logger.error(`Failed to start ${p.name}: dependency ${name} failed to start`);
+            return false;
+        }
+    }
     try {
         p.start?.();
         addStyle(p);
@@ -126,7 +163,7 @@ export function stopPlugin(p: Plugin) {
 
 export function startAllPlugins(stage: StartAt) {
     for (const p of Object.values(plugins)) {
-        if ((p.startAt ?? "DOMContentLoaded") === stage && isPluginEnabled(p.name)) startPlugin(p);
+        if ((p.startAt ?? "WebpackReady") === stage && isPluginEnabled(p.name)) startPlugin(p);
     }
 }
 
@@ -135,8 +172,10 @@ export function setPluginEnabled(name: string, enabled: boolean) {
     if (!p || p.required) return false;
     getPluginSettings(name, p.enabledByDefault ?? false).enabled = enabled;
     saveSettings();
-    if (p.patches?.length) {
-        logger.warn(`${name} patches Discord's code: reload Discord (Ctrl+R) to apply.`);
+    if (enabled) enableDependencies(p);
+
+    if (pluginRequiresRestart(p)) {
+        logger.warn(`${name} requires a reload: reload Discord (Ctrl+R) to apply.`);
         return true;
     }
     return enabled ? startPlugin(p) : stopPlugin(p);

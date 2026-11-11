@@ -1,74 +1,53 @@
 /*
  * Majic — NoTrack plugin
- * Ported from Vencord, GPL-3.0-or-later
  */
 
 import { definePluginSettings } from "@api/settings";
 import { Logger } from "@utils/logger";
 import { definePlugin, OptionType } from "@utils/types";
-import { Flux, FluxDispatcher } from "@webpack/common";
 
 const logger = new Logger("NoTrack", "#8caaee");
 
+const BADGE_EVENTS = new Set(["launch_game", "running_game_heartbeat"]);
+const STREAM_EVENTS = new Set(["media_session_joined", "video_stream_started", "video_stream_ended"]);
+
 const settings = definePluginSettings({
-    disableAnalytics: {
+    blockAnalytics: {
         type: OptionType.BOOLEAN,
-        description: "Block Discord's tracking analytics",
-        default: true,
-        restartNeeded: true
+        description: "Block Discord's analytics events",
+        default: true
     },
-    allowBadgeTracking: {
+    keepBadgeProgress: {
         type: OptionType.BOOLEAN,
-        description: "Still send the events needed for badges to track your progress (eg: hours played, hours streamed)",
+        description: "Still send the few events Discord needs to track badge and quest progress (time played, time streamed)",
         default: true,
-        restartNeeded: true,
         disabled() {
-            return !this.store.disableAnalytics;
+            return !this.store.blockAnalytics;
         }
     }
 });
 
-const gameEvents = new Set(["launch_game", "running_game_heartbeat"]);
-const streamEvents = new Set(["media_session_joined", "video_stream_started", "video_stream_ended"]);
+function isBadgeEvent(event: string, properties?: Record<string, unknown>) {
+    if (BADGE_EVENTS.has(event)) return true;
+    return STREAM_EVENTS.has(event) && properties?.context === "stream" && properties.participant_type !== "receiver";
+}
 
-function disableSentry() {
-    Object.defineProperty(Function.prototype, "d", {
-        configurable: true,
-        set(this: any, esmDeclare: unknown) {
-            Object.defineProperty(this, "d", { value: esmDeclare, configurable: true, enumerable: true, writable: true });
-
-            const { stack } = new Error();
-            if (this.c != null || !stack?.includes("http") || !String(this).includes("exports:{}")) return;
-
-            const assetPath = stack.match(/http.+?(?=:\d+?:\d+?$)/m)?.[0];
-            if (!assetPath) return;
-
-            const request = new XMLHttpRequest();
-            request.open("GET", assetPath, false);
-            request.send();
-            if (!request.responseText.includes(".DiscordSentry=")) return;
-
-            logger.info("Disabling Sentry by erroring its webpack instance");
-            Reflect.deleteProperty(Function.prototype, "d");
-            Reflect.deleteProperty(window, "DiscordSentry");
-            throw new Error("Sentry successfully disabled");
-        }
-    });
-
-    Object.defineProperty(window, "DiscordSentry", {
-        configurable: true,
-        set() {
-            logger.error("Failed to disable Sentry, falling back to deleting window.DiscordSentry");
-            Reflect.deleteProperty(Function.prototype, "d");
-            Reflect.deleteProperty(window, "DiscordSentry");
-        }
-    });
+function trapSentry() {
+    try {
+        Object.defineProperty(window, "DiscordSentry", {
+            configurable: false,
+            get: () => undefined,
+            set: () => logger.info("Blocked Sentry crash reporting")
+        });
+    } catch (err) {
+        logger.error("Could not block Sentry", err);
+    }
 }
 
 export default definePlugin({
     name: "NoTrack",
-    description: "Disable Discord's tracking (analytics/'science'), metrics, Sentry crash reporting and client mod detection",
-    authors: [{ name: "Cyn" }, { name: "Ven" }, { name: "Nuckyz" }, { name: "Arrow" }, { name: "Cramber" }],
+    description: "Blocks Discord's analytics, metrics, Sentry crash reporting and client mod detection",
+    authors: [{ name: "SnailyStudios" }],
     required: true,
     startAt: "Init",
 
@@ -76,84 +55,34 @@ export default definePlugin({
 
     patches: [
         {
-            find: "AnalyticsActionHandlers.handle",
-            predicate: () => settings.store.disableAnalytics && !settings.store.allowBadgeTracking,
+            find: "handleTrack=function(",
             replacement: {
-                match: /\(0,\i\.analyticsTrackingStoreMaker\)/,
-                replace: "$self.analyticsTrackingStoreMaker"
+                match: /handleTrack=function\((\i)\){/,
+                replace: "$&if(!$self.shouldSend($1.event,$1.properties)){$1.resolve?.();return!1}"
             }
         },
         {
-            find: '"AnalyticsTrackingStore"',
-            predicate: () => settings.store.disableAnalytics && settings.store.allowBadgeTracking,
-            group: true,
-            replacement: [
-                {
-                    match: /handleTrack=function\((\i)\){/,
-                    replace: "$&if(!$self.isBadgeEvent($1.event,$1.properties))return false;"
-                },
-                {
-                    match: /function \i\((\i),\i\){(?=let \i=Date\.now\(\))/,
-                    replace: "$&$1=$1.filter(e=>$self.isBadgeEvent(e.type,e.properties));if(!$1.length)return Promise.resolve();"
-                }
-            ]
-        },
-        {
-            find: ".METRICS_V2",
-            replacement: [
-                {
-                    match: /this\._intervalId=/,
-                    replace: "this._intervalId=void 0&&"
-                },
-                {
-                    match: /(?:increment|distribution)\(\i(?:,\i)?\){/g,
-                    replace: "$&return;"
-                }
-            ]
-        },
-        {
-            find: ".BetterDiscord||null!=",
+            find: ".METRICS_V2,body:{metrics:",
             replacement: {
-                match: /(?=let \i=window;)/,
-                replace: "return false;"
+                match: /_flush\(\){(?=if\(this\._metrics\.length>0\))/,
+                replace: "$&this._metrics=[];return;"
+            }
+        },
+        {
+            find: ".BdApi",
+            replacement: {
+                match: /return null!=(\i)\.jQuery/,
+                replace: "return false&&null!=$1.jQuery"
             }
         }
     ],
 
-    flux: {
-        TRACK(event: { resolve?(): void }) {
-            event?.resolve?.();
-        }
-    },
-
     start() {
-        disableSentry();
+        trapSentry();
     },
 
-    isBadgeEvent(type: string, properties?: Record<string, unknown>) {
-        if (gameEvents.has(type)) return true;
-        return streamEvents.has(type) && properties?.context === "stream" && properties.participant_type !== "receiver";
-    },
-
-    analyticsTrackingStoreMaker() {
-        const error = {
-            ok: false,
-            status: 500,
-            body: { message: "Analytics tracking is disabled by NoTrack", code: 0 },
-            headers: {},
-            text: JSON.stringify({ message: "Analytics tracking is disabled by NoTrack", code: 0 })
-        };
-
-        class AnalyticsTrackingStoreStub extends Flux.Store {
-            static displayName = "AnalyticsTrackingStore";
-
-            requestDrain() { }
-
-            async submitEventsImmediately() {
-                throw error;
-            }
-        }
-
-        return new AnalyticsTrackingStoreStub(FluxDispatcher);
+    shouldSend(event: string, properties?: Record<string, unknown>) {
+        if (!settings.store.blockAnalytics) return true;
+        return settings.store.keepBadgeProgress && isBadgeEvent(event, properties);
     }
 });
