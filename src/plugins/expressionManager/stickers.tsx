@@ -5,7 +5,7 @@
 import { Menu } from "@api/contextMenu";
 import { SubHeading, TextInput } from "@components/ui";
 import { copyWithToast, getGuildAcronym } from "@utils/discord";
-import { extractAndLoadChunksLazy, findComponentByCodeLazy } from "@webpack";
+import { DefaultExtractAndLoadChunksRegex, extractAndLoadChunksLazy, findComponentByCodeLazy } from "@webpack";
 import { Clickable, Endpoints, FluxDispatcher, IconUtils, Modal, openModalLazy, Permissions, React, RestAPI, showToast, Stores, Tooltip, useMemo, useState } from "@webpack/common";
 
 import { buildCloneItem, ExternalIcon, LinkIcon, logger, s, settings } from "./shared";
@@ -30,7 +30,7 @@ export interface StickerItem {
 
 const loadCreateStickerModal = extractAndLoadChunksLazy(
     ["CREATE_STICKER_MODAL", "#{intl::STICKER_PICKER_CREATE_STICKER}"],
-    /(?<=\.CREATE_STICKER_MODAL.{0,100}?)\.then\(\i\.bind\(\i,"?([\w$]+)"?/
+    new RegExp(`\\.CREATE_STICKER_MODAL.{0,100}?${DefaultExtractAndLoadChunksRegex.source}`)
 );
 const CreateStickerModal = findComponentByCodeLazy("#{intl::GUILD_STICKER_INVALID_STICKER}");
 

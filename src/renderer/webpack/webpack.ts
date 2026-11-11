@@ -355,32 +355,39 @@ export function mapMangledModule<S extends string>(code: string | RegExp | CodeF
 export const mapMangledModuleLazy = <S extends string>(code: string | RegExp | CodeFilter, mappers: Record<S, FilterFn>, includeHidden = false) =>
     proxyLazy(() => mapMangledModule(code, mappers, includeHidden));
 
-const ENTRY_POINT = canonicalizeMatch(/\.then\(\i\.bind\(\i,"?([\w$]+)"?/);
-const CHUNK_LOAD = canonicalizeMatch(/\i\.e\("?([\w$]+)"?\)/g);
+export const DefaultExtractAndLoadChunksRegex = /(?:(?:Promise\.all\(\[)?((?:\i\.e\("?[^)]+?"?\),?)+?)(?:\]\))?|Promise\.resolve\(\))\.then\(\i\.bind\(\i,"?([^)]+?)"?(?:,[^)]+?)?\)\)/;
+const ChunkIdsRegex = /\((?:"([^"]+?)"|([\de]+?))\)/g;
 
-export async function extractAndLoadChunks(code: CodeFilter, entryPointMatcher: RegExp = ENTRY_POINT) {
+export function parseChunkIds(rawChunkIds: string): Array<string | number> {
+    return Array.from(rawChunkIds.matchAll(ChunkIdsRegex), m => m[1] ?? Number(m[2]));
+}
+
+export async function extractAndLoadChunks(code: CodeFilter, matcher: RegExp = DefaultExtractAndLoadChunksRegex) {
     const factory = findModuleFactory(...code);
     if (!factory) {
-        logger.warn("extractAndLoadChunks: module not found", code);
+        logger.warn("extractAndLoadChunks: couldn't find module factory", code, matcher);
         return false;
     }
 
-    const source = String(factory);
-    const match = canonicalizeMatch(entryPointMatcher).exec(source);
-    if (!match?.[1]) {
-        logger.warn("extractAndLoadChunks: no lazy import found in module", code);
+    const match = String(factory).match(canonicalizeMatch(matcher));
+    if (!match) {
+        logger.warn("extractAndLoadChunks: couldn't find chunk loading in module factory code", code, matcher);
         return false;
     }
 
-    const statementStart = source.lastIndexOf(";", match.index) + 1;
-    const loader = source.slice(statementStart, match.index);
-    const chunkIds = Array.from(loader.matchAll(CHUNK_LOAD), m => (/^\d+$/.test(m[1]) ? Number(m[1]) : m[1]));
+    const [, rawChunkIds, entryPointId] = match;
+    if (entryPointId == null) {
+        logger.warn("extractAndLoadChunks: matcher didn't return the entry point id", code, matcher);
+        return false;
+    }
 
-    await Promise.all(chunkIds.map(id => wreq.e(id)));
+    const numEntryPoint = Number(entryPointId);
+    const entryPoint = Number.isNaN(numEntryPoint) ? entryPointId : String(numEntryPoint);
 
-    const entryPoint = match[1];
+    if (rawChunkIds) await Promise.all(parseChunkIds(rawChunkIds).map(id => wreq.e(id)));
+
     if (wreq.m[entryPoint] == null) {
-        logger.warn("extractAndLoadChunks: entry point not loaded", entryPoint);
+        logger.warn("extractAndLoadChunks: entry point is not loaded, a chunk may have failed to load", code, matcher);
         return false;
     }
 
