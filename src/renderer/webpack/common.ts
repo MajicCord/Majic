@@ -5,7 +5,7 @@
 import { proxyLazy } from "@utils/lazy";
 import { Logger } from "@utils/logger";
 
-import { _resolveReady, filters, find, findStore, type FilterFn, requireModuleByCode, search, waitFor, wreq } from "./webpack";
+import { _resolveReady, filters, find, findComponentByCodeLazy, findStore, type FilterFn, mapMangledModule, requireModuleByCode, search, waitFor, wreq } from "./webpack";
 
 const logger = new Logger("Commons", "#f1fa8c");
 
@@ -64,7 +64,7 @@ export const useReducer = hook("useReducer");
 export const Flux: { Store: new (dispatcher: any, actionHandlers?: Record<string, (e: any) => void>) => any; [key: string]: any } =
     common("Flux", () => findSilently(filters.byProps("connectStores")));
 
-export const useStateFromStores = common<(stores: any[], getState: () => any, deps?: unknown[]) => any>(
+export const useStateFromStores = common<(stores: any[], getState: () => any, deps?: unknown[], areEqual?: (a: any, b: any) => boolean) => any>(
     "useStateFromStores",
     () => findSilently(filters.byCode("useStateFromStores"))
 );
@@ -97,6 +97,17 @@ export const showToast = common<(toast: ToastData) => void>("showToast", () => f
 export const Tooltip = common("Tooltip", () =>
     findSilently(m => typeof m === "function" && m.prototype?.shouldShowTooltip && m.prototype.render)
 );
+
+export const moment = common<any>("moment", () => findSilently(filters.byProps("parseTwoDigitYear")));
+
+export const DateUtils = proxyLazy(() => mapMangledModule("millisecondsInUnit:", {
+    calendarFormat: filters.byCode('<-1?"sameElse":'),
+    dateFormat: filters.byCode('<2?"nextDay":"sameElse";'),
+    isSameDay: filters.byCode(/Math\.abs\(\i-\i\)/),
+    diffAsUnits: filters.byCode("days:0", "millisecondsInUnit")
+}));
+
+export const Timestamp = findComponentByCodeLazy("#{intl::MESSAGE_EDITED_TIMESTAMP_A11Y_LABEL}");
 
 const KNOWN_STORES = ["UserStore", "ChannelStore", "SelectedChannelStore", "GuildStore", "SelectedGuildStore", "GuildMemberStore", "MessageStore", "RelationshipStore"];
 for (const name of KNOWN_STORES) registry.set(name, () => findStore(name));

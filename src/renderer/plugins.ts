@@ -184,8 +184,8 @@ const pluginFeatures: PluginFeature[] = [
         detach: p => Object.keys(p.memberListDecorators ?? {}).forEach(id => removeMemberListDecorator(`${p.name}-${id}`))
     },
     {
-        attach: p => p.badges?.forEach(badge => addProfileBadge({ ...badge, id: `${p.name}-${badge.id}` })),
-        detach: p => p.badges?.forEach(badge => removeProfileBadge(`${p.name}-${badge.id}`))
+        attach: p => p.userProfileBadge && addProfileBadge(p.userProfileBadge),
+        detach: p => p.userProfileBadge && void removeProfileBadge(p.userProfileBadge)
     }
 ];
 

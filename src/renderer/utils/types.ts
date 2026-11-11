@@ -104,7 +104,7 @@ export interface PluginDef {
     messageAccessories?: Record<string, import("@api/messageDecorations").MessageAccessory>;
     messageDecorations?: Record<string, import("@api/messageDecorations").MessageDecoration>;
     memberListDecorators?: Record<string, import("@api/memberListDecorators").MemberListDecorator>;
-    badges?: import("@api/badges").ProfileBadge[];
+    userProfileBadge?: import("@api/badges").ProfileBadge;
     translations?: Record<string, { description?: string; options?: Record<string, string> }>;
     start?(): void;
     stop?(): void;

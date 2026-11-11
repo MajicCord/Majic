@@ -302,7 +302,8 @@ export function findCssClasses<S extends string>(...classes: S[]): Record<S, str
 
 export const findCssClassesLazy = <S extends string>(...classes: S[]) => proxyLazy(() => findCssClasses(...classes));
 
-export function search(...code: CodeFilter) {
+export function search(...code: CodeFilter): Record<string, ModuleFactory> {
+    if (!wreq) return {};
     const parsed = code.map(canonicalizeMatch);
     return Object.fromEntries(Object.entries(wreq.m).filter(([, factory]) => codeMatches(String(factory), parsed)));
 }
