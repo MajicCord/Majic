@@ -2,6 +2,7 @@
  * Majic — Discord helpers
  */
 
+import { cache } from "@webpack";
 import { ComponentDispatch, FluxDispatcher, i18n, MessageActions, openMediaModal, openUserProfileModal, showToast, Stores, UserSettingsActionCreators, UserUtils } from "@webpack/common";
 import { t } from "@i18n";
 
@@ -14,9 +15,48 @@ export function getIntlMessage(key: string, values?: Record<PropertyKey, any>): 
     return getIntlMessageFromHash(runtimeHashMessageKey(key), values, key);
 }
 
+const messagesByHash = new Map<string, any>();
+
+function* loadedMessageProxies(): Generator<any> {
+    for (const id in cache) {
+        const exports = cache[id]?.exports;
+        if (exports == null || typeof exports !== "object") continue;
+        for (const key of Object.getOwnPropertyNames(exports)) {
+            let value: any;
+            try {
+                value = exports[key];
+            } catch {
+                continue;
+            }
+            if (value !== i18n.t && value?.[Symbol.toStringTag] === "IntlMessagesProxy") yield value;
+        }
+    }
+}
+
+const missingSince = new Map<string, number>();
+
+function findMessages(hashedKey: string) {
+    const known = messagesByHash.get(hashedKey);
+    if (known) return known;
+
+    const missing = missingSince.get(hashedKey);
+    if (missing != null && Date.now() - missing < 5000) return i18n.t;
+
+    for (const messages of [i18n.t, ...loadedMessageProxies()]) {
+        if (!i18n.intl.string(messages[hashedKey])) continue;
+        messagesByHash.set(hashedKey, messages);
+        missingSince.delete(hashedKey);
+        return messages;
+    }
+
+    missingSince.set(hashedKey, Date.now());
+    return i18n.t;
+}
+
 export function getIntlMessageFromHash(hashedKey: string, values?: Record<PropertyKey, any>, originalKey?: string): any {
     try {
-        return values == null ? i18n.intl.string(i18n.t[hashedKey]) : i18n.intl.format(i18n.t[hashedKey], values);
+        const messages = findMessages(hashedKey);
+        return values == null ? i18n.intl.string(messages[hashedKey]) : i18n.intl.format(messages[hashedKey], values);
     } catch (err) {
         intlLogger.error(`Failed to get intl message for key: ${originalKey ?? hashedKey}`, err);
         return originalKey ?? "";
