@@ -13,6 +13,8 @@ export interface PluginSettings {
 export interface Settings {
     plugins: Record<string, PluginSettings>;
     useQuickCss: boolean;
+    enabledThemes: string[];
+    themeLinks: string[];
     notifications: {
         useNative: "always" | "not-focused" | "never";
         timeout: number;
@@ -22,6 +24,8 @@ export interface Settings {
 const DEFAULTS: Settings = {
     plugins: {},
     useQuickCss: true,
+    enabledThemes: [],
+    themeLinks: [],
     notifications: {
         useNative: "not-focused",
         timeout: 5000

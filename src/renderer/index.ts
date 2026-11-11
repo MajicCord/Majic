@@ -5,6 +5,7 @@
 import { Logger } from "@utils/logger";
 import { settings } from "@api/settings";
 import { enableStyle } from "@api/styles";
+import { initThemes, initThemeStoreListener } from "@api/themes";
 import { initWebpackHook, reportPendingPatches } from "./webpack/patchWebpack";
 import * as Plugins from "./plugins";
 import * as Webpack from "./webpack";
@@ -20,18 +21,13 @@ Plugins.registerPatches();
 Plugins.startAllPlugins("Init");
 Webpack.onceReady.then(() => {
     Plugins.startAllPlugins("WebpackReady");
+    initThemeStoreListener();
     setTimeout(Webpack.Common.reportCommons, 5_000);
 });
 
-async function injectQuickCss() {
-    if (!settings.useQuickCss) return;
-    const css = await MajicNative.getQuickCss();
-    if (css) enableStyle("quickcss", css);
-}
-
 function onDomReady() {
     Plugins.startAllPlugins("DOMContentLoaded");
-    injectQuickCss();
+    initThemes();
     logger.info(`Majic v${version} loaded`);
     setTimeout(reportPendingPatches, 10_000);
 }

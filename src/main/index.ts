@@ -5,7 +5,8 @@
 import { IpcEvents } from "@shared/IpcEvents";
 import { onceDefined } from "@shared/onceDefined";
 import { initPluginNatives } from "./ipcPlugins";
-import { DATA_DIR, RendererSettings } from "./settings";
+import { DATA_DIR, QUICK_CSS_FILE, RendererSettings } from "./settings";
+import { initThemes } from "./themes";
 import { persistAfterUpdates } from "./persistAfterUpdates";
 import electron, { app, ipcMain, session, shell, type BrowserWindowConstructorOptions } from "electron";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -37,8 +38,7 @@ require(discordMain);
 function initMajic() {
     persistAfterUpdates();
     initPluginNatives();
-
-    const QUICK_CSS_FILE = join(DATA_DIR, "quickCss.css");
+    initThemes();
 
     mkdirSync(DATA_DIR, { recursive: true });
 

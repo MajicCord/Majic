@@ -18,6 +18,23 @@ for (const [plugin, methods] of Object.entries(pluginIpcMap)) {
 const MajicNative = {
     pluginHelpers,
     openExternal: (url: string): Promise<void> => ipcRenderer.invoke(IpcEvents.OPEN_EXTERNAL, url),
+    openSettingsFolder: (): Promise<void> => ipcRenderer.invoke(IpcEvents.OPEN_SETTINGS_FOLDER),
+    themes: {
+        getThemesList: (): Promise<Array<Record<string, string | undefined> & { fileName: string; name: string; author: string; description: string }>> => ipcRenderer.invoke(IpcEvents.GET_THEMES_LIST),
+        getThemeData: (fileName: string): Promise<string | undefined> => ipcRenderer.invoke(IpcEvents.GET_THEME_DATA, fileName),
+        getSystemValues: (): Promise<Record<string, string>> => ipcRenderer.invoke(IpcEvents.GET_THEME_SYSTEM_VALUES),
+        openFolder: (): Promise<void> => ipcRenderer.invoke(IpcEvents.OPEN_THEMES_FOLDER)
+    },
+    quickCss: {
+        openFile: (): Promise<void> => ipcRenderer.invoke(IpcEvents.OPEN_QUICK_CSS),
+        initFileWatchers: (): Promise<void> => ipcRenderer.invoke(IpcEvents.INIT_FILE_WATCHERS),
+        addChangeListener(callback: (css: string) => void) {
+            ipcRenderer.on(IpcEvents.QUICK_CSS_UPDATE, (_, css: string) => callback(css));
+        },
+        addThemeChangeListener(callback: () => void) {
+            ipcRenderer.on(IpcEvents.THEME_UPDATE, () => callback());
+        }
+    },
     getSettings: (): string => ipcRenderer.sendSync(IpcEvents.GET_SETTINGS),
     setSettings: (json: string): Promise<void> => ipcRenderer.invoke(IpcEvents.SET_SETTINGS, json),
     getQuickCss: (): Promise<string> => ipcRenderer.invoke(IpcEvents.GET_QUICK_CSS),

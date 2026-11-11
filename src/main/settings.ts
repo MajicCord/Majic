@@ -8,8 +8,10 @@ import { join } from "node:path";
 
 export const DATA_DIR = join(app.getPath("appData"), "Majic");
 export const SETTINGS_FILE = join(DATA_DIR, "settings.json");
+export const QUICK_CSS_FILE = join(DATA_DIR, "quickCss.css");
+export const THEMES_DIR = join(DATA_DIR, "themes");
 
-mkdirSync(DATA_DIR, { recursive: true });
+mkdirSync(THEMES_DIR, { recursive: true });
 
 type Listener = (newValue: any, oldValue: any) => void;
 
