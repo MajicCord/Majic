@@ -120,6 +120,14 @@ export const UserSettingsActionCreators = {
 
 export const MessageTypeSets = common("MessageTypeSets", () => findSilently(filters.byProps("REPLYABLE", "FORWARDABLE")));
 
+export const ConfirmModal = findByCodeLazy("actionBarInput:", '"critical"', '"secondary');
+
+export const DraftType = common<Record<string, number>>("DraftType", () => findSilently(filters.byProps("ChannelMessage", "SlashCommand")));
+export const UploadManager = common("UploadManager", () => findSilently(filters.byProps("clearAll", "addFile")));
+export const UploadHandler = {
+    promptToUpload: findByCodeLazy("Unexpected mismatch between files and file metadata") as (files: File[], channel: any, draftType: number) => void
+};
+
 export const openMediaModal: (props: { items: Array<Record<string, unknown>>; [key: string]: unknown }) => void = findByCodeLazy("hasMediaOptions", "shouldHideMediaOptions");
 
 export const { openModalLazy, openModal, closeModal, closeAllModals } = mapMangledModuleLazy(".modalKey?", {
