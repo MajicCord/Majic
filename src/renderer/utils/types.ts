@@ -79,6 +79,13 @@ export interface DefinedSettings<D extends SettingsDefinition = SettingsDefiniti
     def: D;
     pluginName: string;
     readonly store: SettingsStore<D>;
+    use<K extends keyof D>(keys?: K[]): SettingsStore<D>;
+}
+
+export function makeRange(start: number, end: number, step = 1) {
+    const range: number[] = [];
+    for (let value = start; value <= end; value += step) range.push(Math.round(value * 100) / 100);
+    return range;
 }
 
 export interface PluginDef {

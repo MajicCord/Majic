@@ -2,6 +2,7 @@
  * Majic — settings
  */
 
+import { useEffect, useReducer } from "@webpack/common";
 import { type DefinedSettings, OptionType, type PluginSettingDef, type SettingsDefinition } from "@utils/types";
 
 export interface PluginSettings {
@@ -48,6 +49,36 @@ export function saveSettings() {
     saveTimeout = setTimeout(() => MajicNative.setSettings(JSON.stringify(settings, null, 4)), 300);
 }
 
+const changeListeners = new Map<string, Set<() => void>>();
+
+function addChangeListener(path: string, listener: () => void) {
+    let listeners = changeListeners.get(path);
+    if (!listeners) changeListeners.set(path, listeners = new Set());
+    listeners.add(listener);
+}
+
+function removeChangeListener(path: string, listener: () => void) {
+    changeListeners.get(path)?.delete(listener);
+}
+
+function notifyChange(pluginName: string, key: string) {
+    for (const path of [`plugins.${pluginName}.${key}`, `plugins.${pluginName}.*`]) {
+        changeListeners.get(path)?.forEach(listener => listener());
+    }
+}
+
+export function useSettings(paths: string[]) {
+    const [, forceUpdate] = useReducer(() => ({}), {});
+    const key = paths.join("|");
+
+    useEffect(() => {
+        paths.forEach(path => addChangeListener(path, forceUpdate));
+        return () => paths.forEach(path => removeChangeListener(path, forceUpdate));
+    }, [key]);
+
+    return settings;
+}
+
 export function getPluginSettings(name: string, enabledByDefault: boolean): PluginSettings {
     return (settings.plugins[name] ??= { enabled: enabledByDefault });
 }
@@ -63,6 +94,11 @@ export function definePluginSettings<D extends SettingsDefinition>(def: D): Defi
     const defined: DefinedSettings<D> = {
         def,
         pluginName: "",
+        use(keys) {
+            const paths = keys ? keys.map(name => `plugins.${defined.pluginName}.${String(name)}`) : [`plugins.${defined.pluginName}.*`];
+            useSettings(paths);
+            return defined.store;
+        },
         get store() {
             if (!defined.pluginName) throw new Error("Cannot access plugin settings before the plugin is initialized");
             const target = settings.plugins[defined.pluginName];
@@ -73,6 +109,7 @@ export function definePluginSettings<D extends SettingsDefinition>(def: D): Defi
                         set(obj, key, value) {
                             obj[key as string] = value;
                             saveSettings();
+                            notifyChange(defined.pluginName, key as string);
                             (def[key as string] as PluginSettingDef | undefined)?.onChange?.(value);
                             return true;
                         }

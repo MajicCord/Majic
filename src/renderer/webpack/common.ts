@@ -5,7 +5,7 @@
 import { proxyLazy } from "@utils/lazy";
 import { Logger } from "@utils/logger";
 
-import { _resolveReady, filters, find, findComponentByCodeLazy, findStore, type FilterFn, mapMangledModule, requireModuleByCode, search, waitFor, wreq } from "./webpack";
+import { _resolveReady, filters, find, findByCodeLazy, findComponentByCodeLazy, findStore, type FilterFn, mapMangledModule, mapMangledModuleLazy, requireModuleByCode, search, waitFor, wreq } from "./webpack";
 
 const logger = new Logger("Commons", "#f1fa8c");
 
@@ -60,6 +60,7 @@ export const useMemo = hook("useMemo");
 export const useRef = hook("useRef");
 export const useCallback = hook("useCallback");
 export const useReducer = hook("useReducer");
+export const useLayoutEffect = hook("useLayoutEffect");
 
 export const Flux: { Store: new (dispatcher: any, actionHandlers?: Record<string, (e: any) => void>) => any; [key: string]: any } =
     common("Flux", () => findSilently(filters.byProps("connectStores")));
@@ -108,6 +109,24 @@ export const DateUtils = proxyLazy(() => mapMangledModule("millisecondsInUnit:",
 }));
 
 export const Timestamp = findComponentByCodeLazy("#{intl::MESSAGE_EDITED_TIMESTAMP_A11Y_LABEL}");
+
+export const openMediaModal: (props: { items: Array<Record<string, unknown>>; [key: string]: unknown }) => void = findByCodeLazy("hasMediaOptions", "shouldHideMediaOptions");
+
+export const { openModalLazy, openModal, closeModal, closeAllModals } = mapMangledModuleLazy(".modalKey?", {
+    openModalLazy: filters.byCode(".modalKey?"),
+    openModal: filters.byCode(",instant:"),
+    closeModal: filters.byCode(".onCloseCallback()"),
+    closeAllModals: filters.byCode(".getState();for", " in ")
+});
+
+export const UserSummaryItem = common("UserSummaryItem", () => findSilently(filters.componentByCode("defaultRenderUser", "showDefaultAvatarsForNullUsers")));
+
+export const i18n = common<{ t: Record<string, any>; intl: { string(message: any): string; format(message: any, values: Record<PropertyKey, any>): any } }>("i18n", () =>
+    mapMangledModule(['defaultLocale:"en-US"', /initialLocale:\i/], {
+        t: m => m?.[Symbol.toStringTag] === "IntlMessagesProxy",
+        intl: m => m != null && Object.getPrototypeOf(m)?.withFormatters != null
+    }, true)
+);
 
 const KNOWN_STORES = ["UserStore", "ChannelStore", "SelectedChannelStore", "GuildStore", "SelectedGuildStore", "GuildMemberStore", "MessageStore", "RelationshipStore"];
 for (const name of KNOWN_STORES) registry.set(name, () => findStore(name));
