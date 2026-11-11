@@ -8,7 +8,9 @@ import { createStrings } from "@i18n";
 import { Logger } from "@utils/logger";
 import { definePlugin, OptionType } from "@utils/types";
 import { findByCodeLazy, findByPropsLazy, proxyLazyWebpack } from "@webpack";
-import { FluxDispatcher, IconUtils, openModal, Permissions, React, Stores, UserSettingsActionCreators } from "@webpack/common";
+import { ApngBlendOp, ApngDisposeOp, parseAPNG } from "@utils/apng";
+import { ConfirmModal, DraftType, FluxDispatcher, IconUtils, openModal, Permissions, React, Stores, UploadHandler, UserSettingsActionCreators } from "@webpack/common";
+import { applyPalette, GIFEncoder, quantize } from "gifenc";
 import type { ReactElement, ReactNode } from "react";
 
 const s = createStrings({
@@ -19,7 +21,8 @@ const s = createStrings({
         cancel: "Cancel",
         dontAskAgain: "Don't ask again",
         stickerNotice: " This is a FakeNitro sticker and renders like a real sticker only for you. Appears as a link to other users.",
-        emojiNotice: " This is a FakeNitro emoji and renders like a real emoji only for you. Appears as a link to other users."
+        emojiNotice: " This is a FakeNitro emoji and renders like a real emoji only for you. Appears as a link to other users.",
+        noAttachPerms: "You cannot send this message because it contains an animated FakeNitro sticker, and you do not have permission to attach files in this channel. Please remove the sticker to continue."
     },
     fr: {
         holdOn: "Attends !",
@@ -28,12 +31,12 @@ const s = createStrings({
         cancel: "Annuler",
         dontAskAgain: "Ne plus demander",
         stickerNotice: " C'est un autocollant FakeNitro : il s'affiche comme un vrai autocollant seulement pour toi. Les autres voient un lien.",
-        emojiNotice: " C'est un emoji FakeNitro : il s'affiche comme un vrai emoji seulement pour toi. Les autres voient un lien."
+        emojiNotice: " C'est un emoji FakeNitro : il s'affiche comme un vrai emoji seulement pour toi. Les autres voient un lien.",
+        noAttachPerms: "Tu ne peux pas envoyer ce message car il contient un autocollant FakeNitro animé, et tu n'as pas la permission de joindre des fichiers dans ce salon. Retire l'autocollant pour continuer."
     }
 });
 
 const BINARY_READ_OPTIONS = findByPropsLazy("readerFactory");
-const ConfirmModal = findByCodeLazy("actionBarInput:", '"critical"', '"secondary');
 
 function searchProtoClassField(localName: string, protoClass: any) {
     const field = protoClass?.fields?.find((f: any) => f.localName === localName);
@@ -155,6 +158,7 @@ function hasPermission(channelId: string, permission: bigint) {
 const hasExternalEmojiPerms = (channelId: string) => hasPermission(channelId, Permissions.USE_EXTERNAL_EMOJIS);
 const hasExternalStickerPerms = (channelId: string) => hasPermission(channelId, Permissions.USE_EXTERNAL_STICKERS);
 const hasEmbedPerms = (channelId: string) => hasPermission(channelId, Permissions.EMBED_LINKS);
+const hasAttachmentPerms = (channelId: string) => hasPermission(channelId, Permissions.ATTACH_FILES);
 
 function getWordBoundary(origStr: string, offset: number) {
     return (!origStr[offset] || /\s/.test(origStr[offset])) ? "" : " ";
@@ -646,6 +650,52 @@ const plugin = definePlugin({
         return `https://media.discordapp.net/stickers/${id}.${ext}?size=${settings.store.stickerSize}`;
     },
 
+    async sendAnimatedSticker(stickerLink: string, stickerId: string, channelId: string) {
+        const { frames, width, height } = await fetch(stickerLink)
+            .then(res => res.arrayBuffer())
+            .then(parseAPNG);
+
+        const gif = GIFEncoder();
+        const resolution = settings.store.stickerSize ?? DEFAULT_STICKER_SIZE;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = resolution;
+        canvas.height = resolution;
+
+        const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+        const scale = resolution / Math.max(width, height);
+        ctx.scale(scale, scale);
+
+        let previousFrameData: ImageData;
+
+        for (const frame of frames) {
+            const { left, top, width, height, img, delay, blendOp, disposeOp } = frame;
+
+            previousFrameData = ctx.getImageData(left, top, width, height);
+
+            if (blendOp === ApngBlendOp.SOURCE) ctx.clearRect(left, top, width, height);
+
+            ctx.drawImage(img, left, top, width, height);
+
+            const { data } = ctx.getImageData(0, 0, resolution, resolution);
+            const palette = quantize(data, 256);
+            const index = applyPalette(data, palette);
+
+            gif.writeFrame(index, resolution, resolution, { transparent: true, palette, delay });
+
+            if (disposeOp === ApngDisposeOp.BACKGROUND) {
+                ctx.clearRect(left, top, width, height);
+            } else if (disposeOp === ApngDisposeOp.PREVIOUS) {
+                ctx.putImageData(previousFrameData, left, top);
+            }
+        }
+
+        gif.finish();
+
+        const file = new File([gif.bytesView() as Uint8Array<ArrayBuffer>], `${stickerId}.gif`, { type: "image/gif" });
+        UploadHandler.promptToUpload([file], Stores.ChannelStore.getChannel(channelId), DraftType.ChannelMessage);
+    },
+
     canUseEmote(e: any, channelId: string) {
         if (e.type === 0) return true;
         if (e.available === false) return false;
@@ -680,9 +730,27 @@ const plugin = definePlugin({
                 const canUseStickers = plugin.canUseStickers && hasExternalStickerPerms(channelId);
                 if (sticker.available !== false && (canUseStickers || sticker.guild_id === guildId)) break stickerBypass;
 
+                const link = plugin.getStickerLink(sticker);
+
+                if (sticker.format_type === StickerFormatType.APNG) {
+                    if (!hasAttachmentPerms(channelId)) {
+                        openModal((props: any) => (
+                            <ConfirmModal {...props} title={s("holdOn")} confirmText="OK" variant="primary">
+                                <div>
+                                    <p className="majic-text">{s("noAttachPerms")}</p>
+                                </div>
+                            </ConfirmModal>
+                        ));
+                    } else {
+                        void plugin.sendAnimatedSticker(link, sticker.id, channelId);
+                    }
+
+                    return { cancel: true };
+                }
+
                 hasBypass = true;
 
-                const url = new URL(plugin.getStickerLink(sticker));
+                const url = new URL(link);
                 url.searchParams.set("name", sticker.name);
                 url.searchParams.set("lossless", "true");
 
