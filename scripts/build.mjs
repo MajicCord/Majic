@@ -47,7 +47,7 @@ const configs = [
         outfile: join(ROOT, "dist/patcher.js"),
         platform: "node",
         format: "cjs",
-        external: ["electron"]
+        external: ["electron", "original-fs"]
     },
     {
         ...common,
@@ -55,7 +55,7 @@ const configs = [
         outfile: join(ROOT, "dist/preload.js"),
         platform: "node",
         format: "cjs",
-        external: ["electron"]
+        external: ["electron", "original-fs"]
     },
     {
         ...common,

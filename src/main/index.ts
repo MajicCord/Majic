@@ -4,6 +4,7 @@
 
 import { IpcEvents } from "@shared/IpcEvents";
 import { onceDefined } from "@shared/onceDefined";
+import { persistAfterUpdates } from "./persistAfterUpdates";
 import electron, { app, ipcMain, session, type BrowserWindowConstructorOptions } from "electron";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -32,6 +33,8 @@ if (require.main) require.main.filename = discordMain;
 require(discordMain);
 
 function initMajic() {
+    persistAfterUpdates();
+
     const DATA_DIR = join(app.getPath("appData"), "Majic");
     const SETTINGS_FILE = join(DATA_DIR, "settings.json");
     const QUICK_CSS_FILE = join(DATA_DIR, "quickCss.css");
