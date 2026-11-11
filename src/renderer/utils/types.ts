@@ -2,6 +2,8 @@
  * Majic — plugin, patch and settings types
  */
 
+import type { ComponentType } from "react";
+
 export interface PatchReplacement {
     match: string | RegExp;
     replace: string | ((substring: string, ...groups: string[]) => string);
@@ -53,7 +55,7 @@ export interface SelectOption {
 }
 
 export type PluginSettingDef =
-    | OptionBase & { type: typeof OptionType.STRING; default?: string; placeholder?: string; isValid?(value: string): boolean | string }
+    | OptionBase & { type: typeof OptionType.STRING; default?: string; placeholder?: string; multiline?: boolean; isValid?(value: string): boolean | string }
     | OptionBase & { type: typeof OptionType.NUMBER; default?: number; placeholder?: string; isValid?(value: number): boolean | string }
     | OptionBase & { type: typeof OptionType.BIGINT; default?: bigint; placeholder?: string; isValid?(value: bigint): boolean | string }
     | OptionBase & { type: typeof OptionType.BOOLEAN; default?: boolean }
@@ -112,6 +114,7 @@ export interface PluginDef {
     messageDecorations?: Record<string, import("@api/messageDecorations").MessageDecoration>;
     memberListDecorators?: Record<string, import("@api/memberListDecorators").MemberListDecorator>;
     userProfileBadge?: import("@api/badges").ProfileBadge;
+    settingsAboutComponent?: ComponentType;
     translations?: Record<string, { description?: string; options?: Record<string, string> }>;
     start?(): void;
     stop?(): void;

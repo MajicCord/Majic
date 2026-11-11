@@ -8,43 +8,43 @@ import { DiscordIcon, React, useEffect, useRef, useState } from "@webpack/common
 import type { ReactNode } from "react";
 
 const CSS = `
-.majic-page { display: flex; flex-direction: column; gap: 16px; color: var(--text-normal); font-family: var(--font-primary); }
-.majic-heading { margin: 0; color: var(--header-primary); font-size: 20px; font-weight: 600; line-height: 24px; }
-.majic-subheading { margin: 0 0 8px; color: var(--header-secondary); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
-.majic-text { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-normal); }
+.majic-page { display: flex; flex-direction: column; gap: 16px; color: var(--text-default); font-family: var(--font-primary); }
+.majic-heading { margin: 0; color: var(--text-strong); font-size: 20px; font-weight: 600; line-height: 24px; }
+.majic-subheading { margin: 0 0 8px; color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+.majic-text { margin: 0; font-size: 14px; line-height: 20px; color: var(--text-default); }
 .majic-muted { color: var(--text-muted); font-size: 13px; line-height: 18px; }
-.majic-card { padding: 16px; border-radius: 8px; background: var(--background-secondary); border: 1px solid var(--background-modifier-accent); }
+.majic-card { padding: 16px; border-radius: 8px; background: var(--background-base-lower); border: 1px solid var(--border-subtle); }
 .majic-row { display: flex; align-items: center; gap: 12px; }
 .majic-row-grow { flex: 1; min-width: 0; }
-.majic-switch { position: relative; flex-shrink: 0; width: 40px; height: 24px; border-radius: 12px; border: none; padding: 0; cursor: pointer; background: var(--background-modifier-accent, #4e5058); transition: background .15s; }
+.majic-switch { position: relative; flex-shrink: 0; width: 40px; height: 24px; border-radius: 12px; border: none; padding: 0; cursor: pointer; background: var(--border-subtle, #4e5058); transition: background .15s; }
 .majic-switch[aria-checked="true"] { background: var(--majic-accent); }
 .majic-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
 .majic-switch[aria-checked="true"]::after { transform: translateX(16px); }
 .majic-switch:disabled { opacity: .5; cursor: not-allowed; }
 .majic-button { padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #fff; background: var(--majic-accent); }
 .majic-button:hover { filter: brightness(1.1); }
-.majic-button[data-variant="secondary"] { background: var(--background-modifier-accent, #4e5058); color: var(--text-normal); }
+.majic-button[data-variant="secondary"] { background: var(--border-subtle, #4e5058); color: var(--text-default); }
 .majic-button[data-variant="danger"] { background: var(--status-danger, #da373c); }
 .majic-dropdown { position: relative; width: 100%; }
-.majic-dropdown-button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--background-modifier-accent); background: var(--background-tertiary, #1e1f22); color: var(--text-normal); font-size: 14px; font-family: inherit; text-align: left; cursor: pointer; transition: border-color .15s; }
+.majic-dropdown-button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--background-base-lowest, #1e1f22); color: var(--text-default); font-size: 14px; font-family: inherit; text-align: left; cursor: pointer; transition: border-color .15s; }
 .majic-dropdown-button:hover { border-color: var(--interactive-muted, #4e5058); }
 .majic-dropdown-button[data-open="true"], .majic-dropdown-button:focus-visible { border-color: var(--majic-accent); outline: none; }
 .majic-dropdown-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.majic-dropdown-list { position: absolute; z-index: 1000; top: calc(100% + 4px); left: 0; right: 0; max-height: 240px; overflow-y: auto; padding: 6px; border-radius: 8px; background: var(--background-floating, #111214); box-shadow: var(--elevation-high, 0 8px 16px rgba(0,0,0,.24)); border: 1px solid var(--background-modifier-accent); }
-.majic-dropdown-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 4px; color: var(--interactive-normal); font-size: 14px; cursor: pointer; }
-.majic-dropdown-option[data-highlighted="true"] { background: var(--background-modifier-hover); color: var(--interactive-hover); }
-.majic-dropdown-option[aria-selected="true"] { color: var(--header-primary); font-weight: 500; }
-.majic-input, .majic-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 4px; border: 1px solid var(--background-modifier-accent); background: var(--background-tertiary, #1e1f22); color: var(--text-normal); font-size: 14px; font-family: inherit; }
+.majic-dropdown-list { position: absolute; z-index: 1000; top: calc(100% + 4px); left: 0; right: 0; max-height: 240px; overflow-y: auto; padding: 6px; border-radius: 8px; background: var(--background-base-lower, #111214); box-shadow: var(--elevation-high, 0 8px 16px rgba(0,0,0,.24)); border: 1px solid var(--border-subtle); }
+.majic-dropdown-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 4px; color: var(--interactive-icon-default); font-size: 14px; cursor: pointer; }
+.majic-dropdown-option[data-highlighted="true"] { background: var(--background-mod-subtle); color: var(--interactive-icon-hover); }
+.majic-dropdown-option[aria-selected="true"] { color: var(--text-strong); font-weight: 500; }
+.majic-input, .majic-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 4px; border: 1px solid var(--border-subtle); background: var(--background-base-lowest, #1e1f22); color: var(--text-default); font-size: 14px; font-family: inherit; }
 .majic-textarea { min-height: 220px; resize: vertical; font-family: var(--font-code, monospace); font-size: 13px; }
 .majic-slider { position: relative; height: 24px; display: flex; align-items: center; cursor: pointer; touch-action: none; outline: none; }
-.majic-slider-track { width: 100%; height: 6px; border-radius: 3px; background: var(--background-modifier-accent, #4e5058); overflow: hidden; }
+.majic-slider-track { width: 100%; height: 6px; border-radius: 3px; background: var(--border-subtle, #4e5058); overflow: hidden; }
 .majic-slider-fill { height: 100%; background: var(--majic-accent); }
 .majic-slider-thumb { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); transform: translate(-50%, -50%); transition: transform .1s; pointer-events: none; }
 .majic-slider:hover .majic-slider-thumb, .majic-slider[data-dragging="true"] .majic-slider-thumb { transform: translate(-50%, -50%) scale(1.15); }
 .majic-slider:focus-visible .majic-slider-thumb { box-shadow: 0 0 0 3px var(--majic-accent); }
 .majic-slider-value { min-width: 36px; text-align: right; color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-.majic-icon-button { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; border: none; background: none; color: var(--interactive-normal); cursor: pointer; font-size: 16px; }
-.majic-icon-button:hover { background: var(--background-modifier-hover); color: var(--interactive-hover); }
+.majic-icon-button { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; border: none; background: none; color: var(--interactive-icon-default); cursor: pointer; font-size: 16px; }
+.majic-icon-button:hover { background: var(--background-mod-subtle); color: var(--interactive-icon-hover); }
 .majic-notice-card { padding: 12px 16px; border-radius: 8px; background: var(--info-warning-background, rgba(240,177,50,.1)); border: 1px solid var(--info-warning-foreground, #f0b132); }
 `;
 

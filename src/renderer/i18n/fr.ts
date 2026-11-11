@@ -43,7 +43,8 @@ const fr: Dictionary = {
     "ui.add": "Ajouter",
     "ui.delete": "Supprimer",
     "ui.test": "Tester",
-    "ui.close": "Fermer"
+    "ui.close": "Fermer",
+    "ui.copied": "Copié dans le presse-papiers !"
 };
 
 export default fr;

@@ -110,6 +110,15 @@ export const DateUtils = proxyLazy(() => mapMangledModule("millisecondsInUnit:",
 
 export const Timestamp = findComponentByCodeLazy("#{intl::MESSAGE_EDITED_TIMESTAMP_A11Y_LABEL}");
 
+export const Modal = findByCodeLazy("leadingLayout:", "actions:", ".message");
+
+export const UserSettingsActionCreators = {
+    FrecencyUserSettingsActionCreators: proxyLazy(() => findSilently(m => m.ProtoClass?.typeName?.endsWith(".FrecencyUserSettings"))),
+    PreloadedUserSettingsActionCreators: proxyLazy(() => findSilently(m => m.ProtoClass?.typeName?.endsWith(".PreloadedUserSettings")))
+};
+
+export const MessageTypeSets = common("MessageTypeSets", () => findSilently(filters.byProps("REPLYABLE", "FORWARDABLE")));
+
 export const openMediaModal: (props: { items: Array<Record<string, unknown>>; [key: string]: unknown }) => void = findByCodeLazy("hasMediaOptions", "shouldHideMediaOptions");
 
 export const { openModalLazy, openModal, closeModal, closeAllModals } = mapMangledModuleLazy(".modalKey?", {
@@ -118,6 +127,8 @@ export const { openModalLazy, openModal, closeModal, closeAllModals } = mapMangl
     closeModal: filters.byCode(".onCloseCallback()"),
     closeAllModals: filters.byCode(".getState();for", " in ")
 });
+
+export const Clickable = common("Clickable", () => findSilently(filters.componentByCode("this.context?this.renderNonInteractive():")));
 
 export const UserSummaryItem = common("UserSummaryItem", () => findSilently(filters.componentByCode("defaultRenderUser", "showDefaultAvatarsForNullUsers")));
 

@@ -36,15 +36,15 @@ function PluginCard({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeed
                     </div>
                     <Text muted>{pluginDescription(plugin)}</Text>
                 </div>
-                {plugin.settings && (
+                {(plugin.settings || plugin.settingsAboutComponent) && (
                     <button type="button" className="majic-icon-button" aria-label={t("plugins.settings")} onClick={() => setExpanded(!expanded)}>
                         <DiscordIcon name="SettingsIcon" size={18} color={expanded ? "var(--majic-accent)" : "currentColor"} />
                     </button>
                 )}
                 <Switch checked={enabled} disabled={plugin.required} onChange={toggle} label={plugin.name} />
             </div>
-            {expanded && plugin.settings && (
-                <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--background-modifier-accent)" }}>
+            {expanded && (plugin.settings || plugin.settingsAboutComponent) && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border-subtle)" }}>
                     <PluginOptions plugin={plugin} onRestartNeeded={onRestartNeeded} />
                 </div>
             )}

@@ -4,7 +4,8 @@
 
 import type { ReactNode } from "react";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
-import { React, Tooltip } from "@webpack/common";
+import { findCssClassesLazy } from "@webpack";
+import { Clickable, React, Tooltip } from "@webpack/common";
 
 export interface ChatBarProps {
     channel: any;
@@ -13,7 +14,7 @@ export interface ChatBarProps {
     [key: string]: unknown;
 }
 
-export type ChatBarButtonRenderer = (props: ChatBarProps & { isMainChat: boolean }) => ReactNode;
+export type ChatBarButtonRenderer = (props: ChatBarProps & { isMainChat: boolean; isAnyChat: boolean }) => ReactNode;
 
 const buttons = new Map<string, ChatBarButtonRenderer>();
 
@@ -23,10 +24,12 @@ export const removeChatBarButton = (id: string) => buttons.delete(id);
 export function _injectChatBarButtons(existing: unknown[], props: ChatBarProps) {
     if (!buttons.size || props?.disabled) return existing;
 
-    const isMainChat = props.type?.analyticsName === "normal";
+    const analyticsName = props.type?.analyticsName;
+    const isMainChat = analyticsName === "normal";
+    const isAnyChat = ["normal", "sidebar"].includes(analyticsName);
     const ours = [...buttons].map(([id, render]) =>
         React.createElement(ErrorBoundary, { key: `majic-${id}`, name: `Chat bar button ${id}` },
-            React.createElement(render, { ...props, isMainChat })
+            React.createElement(render, { ...props, isMainChat, isAnyChat })
         )
     );
     return [...ours, ...existing];
@@ -36,31 +39,31 @@ export interface ChatBarButtonProps {
     tooltip: string;
     onClick(event: MouseEvent): void;
     onContextMenu?(event: MouseEvent): void;
+    onAuxClick?(event: MouseEvent): void;
+    buttonProps?: Record<string, unknown>;
     children: ReactNode;
 }
 
-const BUTTON_STYLE = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100%",
-    padding: "0 8px",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "var(--interactive-normal)"
-};
+const ButtonWrapperClasses = findCssClassesLazy("button", "buttonWrapper", "notificationDot");
+const ChannelTextAreaClasses = findCssClassesLazy("buttonContainer", "channelTextArea", "button");
 
-export function ChatBarButton({ tooltip, onClick, onContextMenu, children }: ChatBarButtonProps) {
-    return React.createElement(Tooltip, { text: tooltip, children: (tooltipProps: { onMouseEnter(): void; onMouseLeave(): void }) =>
-        React.createElement("button", {
-            ...tooltipProps,
-            type: "button",
-            "aria-label": tooltip,
-            className: "majic-chatbar-button",
-            style: BUTTON_STYLE,
-            onClick,
-            onContextMenu
-        }, children)
+const classes = (...names: Array<string | undefined>) => names.filter(Boolean).join(" ");
+
+export function ChatBarButton(props: ChatBarButtonProps) {
+    return React.createElement(Tooltip, {
+        text: props.tooltip,
+        children: ({ onMouseEnter, onMouseLeave }: { onMouseEnter(): void; onMouseLeave(): void }) =>
+            React.createElement("div", { className: classes("expression-picker-chat-input-button", ChannelTextAreaClasses?.buttonContainer, "majic-chatbar-button") },
+                React.createElement(Clickable, {
+                    "aria-label": props.tooltip,
+                    onMouseEnter,
+                    onMouseLeave,
+                    className: classes(ButtonWrapperClasses.button, ChannelTextAreaClasses?.button),
+                    onClick: props.onClick,
+                    onContextMenu: props.onContextMenu,
+                    onAuxClick: props.onAuxClick,
+                    ...props.buttonProps
+                }, React.createElement("div", { className: ButtonWrapperClasses.buttonWrapper }, props.children))
+            )
     });
 }

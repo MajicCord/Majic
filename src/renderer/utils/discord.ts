@@ -2,7 +2,8 @@
  * Majic — Discord helpers
  */
 
-import { FluxDispatcher, i18n, MessageActions, openMediaModal, Stores } from "@webpack/common";
+import { ComponentDispatch, FluxDispatcher, i18n, MessageActions, openMediaModal, showToast, Stores, UserSettingsActionCreators } from "@webpack/common";
+import { t } from "@i18n";
 
 import { runtimeHashMessageKey } from "./intlHash";
 import { Logger } from "./logger";
@@ -51,4 +52,31 @@ export function openImageModal(item: ImageModalItem, mediaModalProps?: Record<st
         items: [{ type: "IMAGE", original: item.original ?? item.url, ...item }],
         ...mediaModalProps
     });
+}
+
+export const Theme = {
+    Dark: 1,
+    Light: 2
+} as const;
+
+export function getTheme(): number {
+    try {
+        return UserSettingsActionCreators.PreloadedUserSettingsActionCreators.getCurrentValue()?.appearance?.theme;
+    } catch {
+        return Theme.Dark;
+    }
+}
+
+export function insertTextIntoChatInputBox(text: string) {
+    ComponentDispatch.dispatchToLastSubscribed("INSERT_TEXT", { rawText: text, plainText: text });
+}
+
+export function copyToClipboard(text: string): Promise<void> {
+    const native = (window as any).DiscordNative;
+    return native?.clipboard ? Promise.resolve(native.clipboard.copy(text)) : navigator.clipboard.writeText(text);
+}
+
+export async function copyWithToast(text: string, toastMessage = t("ui.copied")) {
+    await copyToClipboard(text);
+    showToast({ text: toastMessage, variant: "success" });
 }

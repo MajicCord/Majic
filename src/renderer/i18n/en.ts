@@ -41,5 +41,6 @@ export default {
     "ui.add": "Add",
     "ui.delete": "Delete",
     "ui.test": "Test",
-    "ui.close": "Close"
+    "ui.close": "Close",
+    "ui.copied": "Copied to clipboard!"
 };

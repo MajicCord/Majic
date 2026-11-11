@@ -20,11 +20,11 @@ export interface NotificationData {
 
 const CSS = `
 .majic-notifications { position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-.majic-notification { pointer-events: auto; display: flex; gap: 12px; width: 340px; padding: 12px 14px; border-radius: 8px; background: var(--background-floating, #111214); color: var(--text-normal, #dbdee1); box-shadow: var(--elevation-high, 0 8px 16px rgba(0,0,0,.24)); border-left: 4px solid var(--majic-accent, #7c3aed); cursor: pointer; font-family: var(--font-primary); }
+.majic-notification { pointer-events: auto; display: flex; gap: 12px; width: 340px; padding: 12px 14px; border-radius: 8px; background: var(--background-base-lower, #111214); color: var(--text-default, #dbdee1); box-shadow: var(--elevation-high, 0 8px 16px rgba(0,0,0,.24)); border-left: 4px solid var(--majic-accent, #7c3aed); cursor: pointer; font-family: var(--font-primary); }
 .majic-notification img { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
-.majic-notification-title { font-weight: 600; margin-bottom: 2px; color: var(--header-primary, #f2f3f5); }
+.majic-notification-title { font-weight: 600; margin-bottom: 2px; color: var(--text-strong, #f2f3f5); }
 .majic-notification-body { font-size: 14px; line-height: 18px; overflow-wrap: anywhere; }
-.majic-notification-close { margin-left: auto; align-self: flex-start; background: none; border: none; color: var(--interactive-normal, #b5bac1); cursor: pointer; font-size: 16px; }
+.majic-notification-close { margin-left: auto; align-self: flex-start; background: none; border: none; color: var(--interactive-icon-default, #b5bac1); cursor: pointer; font-size: 16px; }
 `;
 
 interface Entry extends NotificationData {
