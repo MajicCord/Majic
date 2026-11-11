@@ -13,6 +13,7 @@ export interface MessagePopoverButton {
     label: string;
     icon: ReactNode | ComponentType;
     onClick(event: MouseEvent): void;
+    onContextMenu?(event: MouseEvent): void;
     dangerous?: boolean;
 }
 
