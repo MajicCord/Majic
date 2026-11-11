@@ -2,10 +2,11 @@
  * Majic — notices API
  */
 
+import type { ReactNode } from "react";
 import { FluxDispatcher } from "@webpack/common";
 
 export interface Notice {
-    message: unknown;
+    message: ReactNode;
     buttonText?: string;
     onButtonClick?(): void;
     type?: string;

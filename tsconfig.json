@@ -9,12 +9,17 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
+    "jsx": "react",
+    "jsxFactory": "React.createElement",
+    "jsxFragmentFactory": "React.Fragment",
     "baseUrl": ".",
     "paths": {
       "@api/*": ["src/renderer/api/*"],
       "@webpack": ["src/renderer/webpack/index.ts"],
       "@webpack/common": ["src/renderer/webpack/common.ts"],
       "@utils/*": ["src/renderer/utils/*"],
+      "@components/*": ["src/renderer/components/*"],
+      "@renderer/*": ["src/renderer/*"],
       "@shared/*": ["src/shared/*"]
     }
   },

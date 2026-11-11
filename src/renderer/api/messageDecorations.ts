@@ -2,14 +2,15 @@
  * Majic — message accessories and decorations API
  */
 
+import type { ReactNode } from "react";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { Logger } from "@utils/logger";
 import { React } from "@webpack/common";
 
 const logger = new Logger("MessageDecorations", "#ff79c6");
 
-export type MessageAccessory = (props: { message: any; channel?: any; [key: string]: unknown }) => unknown;
-export type MessageDecoration = (props: { message: any; [key: string]: unknown }) => unknown;
+export type MessageAccessory = (props: { message: any; channel?: any; [key: string]: unknown }) => ReactNode;
+export type MessageDecoration = (props: { message: any; [key: string]: unknown }) => ReactNode;
 
 const accessories = new Map<string, { render: MessageAccessory; position?: number }>();
 const decorations = new Map<string, MessageDecoration>();
@@ -19,7 +20,7 @@ export const removeMessageAccessory = (id: string) => accessories.delete(id);
 export const addMessageDecoration = (id: string, render: MessageDecoration) => void decorations.set(id, render);
 export const removeMessageDecoration = (id: string) => decorations.delete(id);
 
-export function _withAccessories(children: unknown[], props: Record<string, unknown>) {
+export function _withAccessories(children: unknown[], props: { message: any; [key: string]: unknown }) {
     if (!accessories.size || !Array.isArray(children)) return children;
 
     try {
@@ -36,7 +37,7 @@ export function _withAccessories(children: unknown[], props: Record<string, unkn
     }
 }
 
-export function _renderDecorations(props: Record<string, unknown>) {
+export function _renderDecorations(props: { message: any; [key: string]: unknown }) {
     if (!decorations.size) return null;
 
     return React.createElement("span", { className: "majic-message-decorations", style: { display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 4 } },

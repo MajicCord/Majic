@@ -16,12 +16,13 @@ const pluginsGlob = {
     setup(b) {
         b.onResolve({ filter: /^~plugins$/ }, () => ({ path: "~plugins", namespace: "majic-plugins" }));
         b.onLoad({ filter: /.*/, namespace: "majic-plugins" }, () => {
-            const dirs = readdirSync(PLUGINS_DIR, { withFileTypes: true })
-                .filter(d => d.isDirectory() && existsSync(join(PLUGINS_DIR, d.name, "index.ts")))
-                .map(d => d.name);
-            const imports = dirs.map((d, i) => `import p${i} from ${JSON.stringify(join(PLUGINS_DIR, d, "index.ts"))};`);
+            const entries = readdirSync(PLUGINS_DIR, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => ["index.ts", "index.tsx"].map(file => join(PLUGINS_DIR, d.name, file)).find(existsSync))
+                .filter(Boolean);
+            const imports = entries.map((file, i) => `import p${i} from ${JSON.stringify(file)};`);
             return {
-                contents: `${imports.join("\n")}\nexport default [${dirs.map((_, i) => `p${i}`).join(", ")}];`,
+                contents: `${imports.join("\n")}\nexport default [${entries.map((_, i) => `p${i}`).join(", ")}];`,
                 resolveDir: PLUGINS_DIR,
                 loader: "ts",
                 watchDirs: [PLUGINS_DIR]

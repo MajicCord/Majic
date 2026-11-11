@@ -394,6 +394,11 @@ export function waitFor(filter: string | PropsFilter | FilterFn, callback: Callb
     waitForSubscriptions.set(fn, callback);
 }
 
+export function requireModuleByCode(...code: CodeFilter) {
+    const [id] = Object.keys(search(...code));
+    return id == null ? null : wreq(id);
+}
+
 export async function dumpModule(moduleId: PropertyKey) {
     const factory = wreq.m[moduleId as string];
     if (!factory) throw new Error(`Module ${String(moduleId)} is not loaded`);

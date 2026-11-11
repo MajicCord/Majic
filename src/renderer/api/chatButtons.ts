@@ -2,6 +2,7 @@
  * Majic — chat bar buttons API
  */
 
+import type { ReactNode } from "react";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { React, Tooltip } from "@webpack/common";
 
@@ -12,7 +13,7 @@ export interface ChatBarProps {
     [key: string]: unknown;
 }
 
-export type ChatBarButtonRenderer = (props: ChatBarProps & { isMainChat: boolean }) => unknown;
+export type ChatBarButtonRenderer = (props: ChatBarProps & { isMainChat: boolean }) => ReactNode;
 
 const buttons = new Map<string, ChatBarButtonRenderer>();
 
@@ -35,7 +36,7 @@ export interface ChatBarButtonProps {
     tooltip: string;
     onClick(event: MouseEvent): void;
     onContextMenu?(event: MouseEvent): void;
-    children: unknown;
+    children: ReactNode;
 }
 
 const BUTTON_STYLE = {
@@ -51,7 +52,7 @@ const BUTTON_STYLE = {
 };
 
 export function ChatBarButton({ tooltip, onClick, onContextMenu, children }: ChatBarButtonProps) {
-    return React.createElement(Tooltip, { text: tooltip }, (tooltipProps: { onMouseEnter(): void; onMouseLeave(): void }) =>
+    return React.createElement(Tooltip, { text: tooltip, children: (tooltipProps: { onMouseEnter(): void; onMouseLeave(): void }) =>
         React.createElement("button", {
             ...tooltipProps,
             type: "button",
@@ -61,5 +62,5 @@ export function ChatBarButton({ tooltip, onClick, onContextMenu, children }: Cha
             onClick,
             onContextMenu
         }, children)
-    );
+    });
 }

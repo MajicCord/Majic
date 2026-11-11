@@ -2,6 +2,7 @@
  * Majic — React error boundary
  */
 
+import type { ComponentType, ReactNode } from "react";
 import { React } from "@webpack/common";
 
 import { Logger } from "./logger";
@@ -10,8 +11,8 @@ const logger = new Logger("ErrorBoundary", "#ff5555");
 
 export interface ErrorBoundaryProps {
     name: string;
-    fallback?: unknown;
-    children?: unknown;
+    fallback?: ReactNode;
+    children?: ReactNode;
 }
 
 let ErrorBoundaryClass: any;
@@ -39,6 +40,6 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
     return React.createElement(getErrorBoundary(), props, props.children);
 }
 
-export function withErrorBoundary<P extends object>(name: string, Component: (props: P) => unknown) {
+export function withErrorBoundary<P extends object>(name: string, Component: ComponentType<P>) {
     return (props: P) => React.createElement(getErrorBoundary(), { name }, React.createElement(Component, props));
 }

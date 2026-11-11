@@ -5,7 +5,7 @@
 import { proxyLazy } from "@utils/lazy";
 import { Logger } from "@utils/logger";
 
-import { _resolveReady, filters, find, findStore, type FilterFn, waitFor } from "./webpack";
+import { _resolveReady, filters, find, findStore, type FilterFn, requireModuleByCode, waitFor } from "./webpack";
 
 const logger = new Logger("Commons", "#f1fa8c");
 
@@ -44,18 +44,22 @@ waitFor(["dispatch", "subscribe"], dispatcher => {
 });
 registry.set("FluxDispatcher", () => FluxDispatcher);
 
-export const React = common("React", () => findSilently(filters.byProps("createElement", "useState", "useEffect")));
+export const React = common<typeof import("react")>("React", () => findSilently(filters.byProps("createElement", "useState", "useEffect")));
 export const ReactDOM = common("ReactDOM", () => findSilently(filters.byProps("createPortal")));
 export const createRoot = common<(container: Element) => { render(node: unknown): void; unmount(): void }>(
     "createRoot",
     () => findSilently(filters.byProps("createRoot", "hydrateRoot"))?.createRoot ?? findSilently(filters.byCode("(299)", ".onRecoverableError"))
 );
 
-export const useState: typeof React.useState = (...args: any[]) => React.useState(...args);
-export const useEffect: typeof React.useEffect = (...args: any[]) => React.useEffect(...args);
-export const useMemo: typeof React.useMemo = (...args: any[]) => React.useMemo(...args);
-export const useRef: typeof React.useRef = (...args: any[]) => React.useRef(...args);
-export const useCallback: typeof React.useCallback = (...args: any[]) => React.useCallback(...args);
+type ReactModule = typeof import("react");
+const hook = <K extends keyof ReactModule>(name: K) => ((...args: any[]) => (React[name] as any)(...args)) as ReactModule[K];
+
+export const useState = hook("useState");
+export const useEffect = hook("useEffect");
+export const useMemo = hook("useMemo");
+export const useRef = hook("useRef");
+export const useCallback = hook("useCallback");
+export const useReducer = hook("useReducer");
 
 export const Flux: { Store: new (dispatcher: any, actionHandlers?: Record<string, (e: any) => void>) => any; [key: string]: any } =
     common("Flux", () => findSilently(filters.byProps("connectStores")));
@@ -100,3 +104,18 @@ for (const name of KNOWN_STORES) registry.set(name, () => findStore(name));
 export const Stores: Record<string, any> = new Proxy({}, {
     get: (_, name) => (typeof name === "string" ? findStore(name) : undefined)
 });
+
+const icons = new Map<string, unknown>();
+
+function resolveIcon(name: string) {
+    if (!icons.has(name)) {
+        const icon = findSilently(filters.byProps(name))?.[name] ?? requireModuleByCode(`${name}:function`)?.[name];
+        if (icon) icons.set(name, icon);
+    }
+    return icons.get(name);
+}
+
+export const DiscordIcon = ({ name, size = 20, color = "currentColor" }: { name: string; size?: number; color?: string }) => {
+    const Icon = resolveIcon(name);
+    return Icon ? React.createElement(Icon as any, { size: "custom", width: size, height: size, color }) : null;
+};

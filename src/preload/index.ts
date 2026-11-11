@@ -9,6 +9,7 @@ const MajicNative = {
     getSettings: (): string => ipcRenderer.sendSync(IpcEvents.GET_SETTINGS),
     setSettings: (json: string): Promise<void> => ipcRenderer.invoke(IpcEvents.SET_SETTINGS, json),
     getQuickCss: (): Promise<string> => ipcRenderer.invoke(IpcEvents.GET_QUICK_CSS),
+    setQuickCss: (css: string): Promise<void> => ipcRenderer.invoke(IpcEvents.SET_QUICK_CSS, css),
     writeModuleDump: (id: string, code: string): Promise<string> => ipcRenderer.invoke(IpcEvents.WRITE_MODULE_DUMP, id, code)
 };
 

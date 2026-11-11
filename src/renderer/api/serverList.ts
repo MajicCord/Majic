@@ -2,11 +2,12 @@
  * Majic — server list elements API
  */
 
+import type { ReactNode } from "react";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { React } from "@webpack/common";
 
 export type ServerListPosition = "above" | "in";
-export type ServerListElement = () => unknown;
+export type ServerListElement = () => ReactNode;
 
 const elements: Record<ServerListPosition, Map<string, ServerListElement>> = {
     above: new Map(),

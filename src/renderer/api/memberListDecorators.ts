@@ -2,11 +2,12 @@
  * Majic — member list decorators API
  */
 
+import type { ReactNode } from "react";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { React } from "@webpack/common";
 
 export type MemberListContext = "guild" | "dm";
-export type MemberListDecorator = (props: { user?: any; channel?: any; context: MemberListContext; [key: string]: unknown }) => unknown;
+export type MemberListDecorator = (props: { user?: any; channel?: any; context: MemberListContext; [key: string]: unknown }) => ReactNode;
 
 const decorators = new Map<string, MemberListDecorator>();
 

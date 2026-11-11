@@ -56,6 +56,7 @@ function initMajic() {
         writeFileSync(SETTINGS_FILE, json);
     });
     ipcMain.handle(IpcEvents.GET_QUICK_CSS, () => readText(QUICK_CSS_FILE, ""));
+    ipcMain.handle(IpcEvents.SET_QUICK_CSS, (_, css: string) => writeFileSync(QUICK_CSS_FILE, css));
     ipcMain.handle(IpcEvents.WRITE_MODULE_DUMP, (_, id: string, code: string) => {
         const dumpDir = join(DATA_DIR, "dumps");
         mkdirSync(dumpDir, { recursive: true });
