@@ -2,7 +2,7 @@
  * Majic — MessageEventsAPI core plugin
  */
 
-import { _installMessageEvents, _uninstallMessageEvents } from "@api/messageEvents";
+import { _handleClick, _handlePreEdit, _handlePreSend } from "@api/messageEvents";
 import { definePlugin } from "@utils/types";
 
 export default definePlugin({
@@ -16,6 +16,34 @@ export default definePlugin({
     },
     required: true,
 
-    start: _installMessageEvents,
-    stop: _uninstallMessageEvents
+    patches: [
+        {
+            find: "#{intl::EDIT_TEXTAREA_HELP}",
+            replacement: {
+                match: /(?<=,channel:\i,message:\i\}\)\.then\().+?(?=\i\.content!==this\.props\.message\.content&&\i\((.+?)\)\})/,
+                replace: (code, args) =>
+                    `async ${code}if(await $self.handlePreEdit(${args}))return Promise.resolve({shouldClear:false,shouldRefocus:true});`
+            }
+        },
+        {
+            find: ".handleSendMessage,onResize:",
+            replacement: {
+                match: /(?<=channel:\i\}\)\.then\()(?:async )?(\i=>.+?let (\i)=\i\.\i\.parse\((\i),.+?\.getSendMessageOptions\(\{.+?\}\)?;)(?=.+?(\i)\.flags=)(?<=\)\(({.+?})\)\.then.+?)/,
+                replace: (_, body, parsed, channel, options, props) =>
+                    `async ${body}if(await $self.handlePreSend(${channel}.id,${parsed},${options},${props}))return{shouldClear:false,shouldRefocus:true};`
+            }
+        },
+        {
+            find: '("interactionUsernameProfile',
+            replacement: {
+                match: /let\{id:\i}=(\i),{id:\i}=(\i);return \i\.useCallback\((\i)=>\{/,
+                replace: (code, message, channel, event) =>
+                    `const majicMessage=${message},majicChannel=${channel};${code}$self.handleClick(majicMessage,majicChannel,${event});`
+            }
+        }
+    ],
+
+    handlePreSend: _handlePreSend,
+    handlePreEdit: _handlePreEdit,
+    handleClick: _handleClick
 });

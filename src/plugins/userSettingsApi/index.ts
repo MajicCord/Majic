@@ -2,7 +2,6 @@
  * Majic — UserSettingsAPI core plugin
  */
 
-import { _installUserSettings } from "@api/userSettings";
 import { definePlugin } from "@utils/types";
 
 export default definePlugin({
@@ -15,7 +14,24 @@ export default definePlugin({
         }
     },
     required: true,
-    startAt: "Init",
 
-    start: _installUserSettings
+    patches: [
+        {
+            find: ",updateSetting:",
+            replacement: [
+                {
+                    match: /\.updateAsync\(.+?(?=,useSetting:)/,
+                    replace: "$&,userSettingsAPIGroup:arguments[0],userSettingsAPIName:arguments[1]"
+                },
+                {
+                    match: /updateSetting:.{0,100}SELECTIVELY_SYNCED_USER_SETTINGS_UPDATE/,
+                    replace: "userSettingsAPIGroup:arguments[0].userSettingsAPIGroup,userSettingsAPIName:arguments[0].userSettingsAPIName,$&"
+                },
+                {
+                    match: /updateSetting:.{0,60}USER_SETTINGS_OVERRIDE_CLEAR/,
+                    replace: "userSettingsAPIGroup:arguments[0].userSettingsAPIGroup,userSettingsAPIName:arguments[0].userSettingsAPIName,$&"
+                }
+            ]
+        }
+    ]
 });

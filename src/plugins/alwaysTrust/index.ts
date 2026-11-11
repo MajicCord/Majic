@@ -4,26 +4,21 @@
 
 import { definePluginSettings } from "@api/settings";
 import { definePlugin, OptionType } from "@utils/types";
-import { filters, replaceExport } from "@webpack";
-import { Stores } from "@webpack/common";
 
 const settings = definePluginSettings({
-    trustLinks: {
+    domain: {
         type: OptionType.BOOLEAN,
         description: "Open links without the \"Leaving Discord\" warning",
-        default: true
+        default: true,
+        restartNeeded: true
     },
-    trustFiles: {
+    file: {
         type: OptionType.BOOLEAN,
         description: "Download files without the \"Potentially dangerous download\" warning",
-        default: true
+        default: true,
+        restartNeeded: true
     }
 });
-
-const DANGEROUS_FILE_CHECK = filters.byCode(".toURLSafe(", ".pop()?.toLowerCase()");
-
-let restoreFileCheck: (() => void) | null = null;
-let restoreLinkCheck: (() => void) | null = null;
 
 export default definePlugin({
     name: "AlwaysTrust",
@@ -33,31 +28,29 @@ export default definePlugin({
         fr: {
             description: "Supprime les avertissements « Tu quittes Discord » et « Téléchargement potentiellement dangereux »",
             options: {
-                trustLinks: "Ouvrir les liens sans l'avertissement « Tu quittes Discord »",
-                trustFiles: "Télécharger les fichiers sans l'avertissement « Téléchargement potentiellement dangereux »"
+                domain: "Ouvrir les liens sans l'avertissement « Tu quittes Discord »",
+                file: "Télécharger les fichiers sans l'avertissement « Téléchargement potentiellement dangereux »"
             }
         }
     },
     settings,
 
-    start() {
-        const store = Stores.MaskedLinkStore;
-        if (store) {
-            const original = store.isTrustedDomain;
-            store.isTrustedDomain = function (this: unknown, url: string) {
-                return settings.store.trustLinks || original.call(this, url);
-            };
-            restoreLinkCheck = () => store.isTrustedDomain = original;
+    patches: [
+        {
+            find: '="MaskedLinkStore",',
+            predicate: () => settings.store.domain,
+            replacement: {
+                match: /(?<=isTrustedDomain\(\i\){)return \i\(\i\)/,
+                replace: "return true"
+            }
+        },
+        {
+            find: "bitbucket.org",
+            predicate: () => settings.store.file,
+            replacement: {
+                match: /function \i\(\i\){(?=.{0,30}pathname:\i)/,
+                replace: "$&return null;"
+            }
         }
-
-        restoreFileCheck = replaceExport(DANGEROUS_FILE_CHECK, original => function (this: unknown, url: string) {
-            return settings.store.trustFiles ? null : original.call(this, url);
-        });
-    },
-
-    stop() {
-        restoreLinkCheck?.();
-        restoreFileCheck?.();
-        restoreLinkCheck = restoreFileCheck = null;
-    }
+    ]
 });

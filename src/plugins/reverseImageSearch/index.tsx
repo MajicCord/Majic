@@ -21,8 +21,6 @@ const ENGINES: Record<string, string> = {
     IQDB: "https://iqdb.org/?url="
 };
 
-const IMAGE_URL = /\.(png|jpe?g|gif|webp|avif|bmp)(\?|$)|media\.discordapp\.net|cdn\.discordapp\.com\/(attachments|avatars|icons|banners|emojis)/i;
-
 const openSearch = (engine: string, src: string) => window.open(ENGINES[engine] + encodeURIComponent(src), "_blank");
 
 function searchItem(src: string) {
@@ -47,10 +45,21 @@ export default definePlugin({
         }
     },
 
+    patches: [
+        {
+            find: "#{intl::MESSAGE_ACTIONS_MENU_LABEL}),shouldHideMediaOptions:",
+            replacement: {
+                match: /favoriteableType:\i,(?<=(\i)\.getAttribute\("data-type"\).+?)/,
+                replace: (code, target) => `${code}majicImageSearchType:${target}.getAttribute("data-role"),`
+            }
+        }
+    ],
+
     contextMenus: {
-        message(children, props?: { itemSrc?: string; itemHref?: string }) {
-            const src = props?.itemSrc ?? props?.itemHref;
-            if (!src || !IMAGE_URL.test(src) || !Menu.MenuItem) return;
+        message(children, props?: { itemSrc?: string; itemHref?: string; majicImageSearchType?: string }) {
+            if (props?.majicImageSearchType !== "img" || !Menu.MenuItem) return;
+            const src = props.itemHref ?? props.itemSrc;
+            if (!src) return;
             (findGroupChildrenByChildId("copy-link", children) ?? children).push(searchItem(src));
         },
 

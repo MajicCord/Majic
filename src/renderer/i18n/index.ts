@@ -2,7 +2,8 @@
  * Majic — translations
  */
 
-import { Stores, useEffect, useState } from "@webpack/common";
+import { filters, find } from "@webpack";
+import { useEffect, useState } from "@webpack/common";
 
 import en from "./en";
 import fr from "./fr";
@@ -14,9 +15,15 @@ const listeners = new Set<() => void>();
 
 let currentLocale = "en";
 let subscribed = false;
+let localeStore: any;
+
+function getLocaleStore() {
+    localeStore ??= find(filters.byStoreName("LocaleStore"), { silent: true }) ?? undefined;
+    return localeStore;
+}
 
 function readDiscordLocale() {
-    const raw: string = Stores.LocaleStore?.locale ?? document.documentElement.lang ?? "en";
+    const raw: string = getLocaleStore()?.locale || document.documentElement?.lang || navigator.language || "en";
     return raw.toLowerCase();
 }
 
@@ -35,7 +42,7 @@ function refreshLocale() {
 
 function ensureSubscribed() {
     if (subscribed) return;
-    const store = Stores.LocaleStore;
+    const store = getLocaleStore();
     if (!store?.addChangeListener) return;
     store.addChangeListener(refreshLocale);
     subscribed = true;

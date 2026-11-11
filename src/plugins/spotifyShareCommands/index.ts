@@ -2,14 +2,23 @@
  * Majic — SpotifyShareCommands plugin
  */
 
-import { ApplicationCommandOptionType, findOption, type MajicCommand } from "@api/commands";
-import { definePlugin } from "@utils/types";
+import { ApplicationCommandInputType, findOption, type MajicCommand, OptionalMessageOption, sendBotMessage } from "@api/commands";
 import { createStrings } from "@i18n";
-import { showToast, Stores } from "@webpack/common";
+import { sendMessageAsReply } from "@utils/discord";
+import { definePlugin } from "@utils/types";
+import { Stores } from "@webpack/common";
 
 const s = createStrings({
-    en: { notListening: "You are not listening to anything on Spotify" },
-    fr: { notListening: "Tu n'écoutes rien sur Spotify" }
+    en: {
+        description: "Share the Spotify {kind} you are listening to",
+        notListening: "You are not listening to anything on Spotify.",
+        notFound: "Could not find this track on Spotify."
+    },
+    fr: {
+        description: "Partage le {kind} Spotify que tu écoutes",
+        notListening: "Tu n'écoutes rien sur Spotify.",
+        notFound: "Impossible de trouver ce morceau sur Spotify."
+    }
 });
 
 interface SpotifyTrack {
@@ -18,21 +27,22 @@ interface SpotifyTrack {
     artists: Array<{ external_urls: { spotify: string } }>;
 }
 
-function shareCommand(name: string, link: (track: SpotifyTrack) => string | undefined): MajicCommand {
+function shareCommand(name: string, link: (track: SpotifyTrack) => string): MajicCommand {
     return {
         name,
-        description: `Share the Spotify ${name} you are listening to`,
-        options: [{ name: "message", description: "Text to send with the link", type: ApplicationCommandOptionType.STRING }],
-        execute(args) {
+        get description() {
+            return s("description", { kind: name });
+        },
+        inputType: ApplicationCommandInputType.BUILT_IN,
+        options: [OptionalMessageOption],
+        execute(args, { channel }) {
             const track: SpotifyTrack | undefined = Stores.SpotifyStore?.getTrack();
-            const url = track?.id ? link(track) : undefined;
-            if (!url) {
-                showToast({ text: s("notListening"), variant: "critical" });
-                return;
-            }
+            if (!track) return sendBotMessage(channel.id, { content: s("notListening"), author: { username: "Majic" } });
+            if (track.id == null) return sendBotMessage(channel.id, { content: s("notFound"), author: { username: "Majic" } });
 
+            const url = link(track);
             const message = findOption<string>(args, "message");
-            return { content: message ? `${message} ${url}` : url };
+            void sendMessageAsReply(channel.id, message ? `${message} ${url}` : url);
         }
     };
 }
@@ -50,6 +60,6 @@ export default definePlugin({
     commands: [
         shareCommand("track", track => `https://open.spotify.com/track/${track.id}`),
         shareCommand("album", track => `https://open.spotify.com/album/${track.album.id}`),
-        shareCommand("artist", track => track.artists[0]?.external_urls.spotify)
+        shareCommand("artist", track => track.artists[0].external_urls.spotify)
     ]
 });
