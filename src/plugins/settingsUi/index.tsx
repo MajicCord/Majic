@@ -38,17 +38,24 @@ interface LayoutBuilder {
 const SECTION_KEY = "majic_section";
 const PLACE_BEFORE = "billing_section";
 
-type TitleKey = "settings.majic" | "settings.plugins" | "settings.themes";
+export interface SettingsEntry {
+    key: string;
+    title: string | (() => string);
+    Component: ComponentType;
+    Icon: string | ComponentType<{ width?: number; height?: number }>;
+}
 
-function sidebarItem(key: string, titleKey: TitleKey, icon: string, Component: ComponentType) {
-    const title = () => t(titleKey);
-    const Safe = () => <ErrorBoundary name={`${titleKey} page`} fallback={<p className="majic-text">{t("settings.pageError")}</p>}><Component /></ErrorBoundary>;
+const customEntries: SettingsEntry[] = [];
+
+function sidebarItem({ key, title: rawTitle, Component, Icon }: SettingsEntry) {
+    const title = typeof rawTitle === "function" ? rawTitle : () => rawTitle;
+    const Safe = () => <ErrorBoundary name={`${key} page`} fallback={<p className="majic-text">{t("settings.pageError")}</p>}><Component /></ErrorBoundary>;
 
     return {
         key,
         type: LayoutTypes.SIDEBAR_ITEM,
         useTitle: title,
-        icon: () => <DiscordIcon name={icon} />,
+        icon: () => typeof Icon === "string" ? <DiscordIcon name={Icon} /> : <Icon width={20} height={20} />,
         buildLayout: () => [{
             key: `${key}_panel`,
             type: LayoutTypes.PANEL,
@@ -78,6 +85,8 @@ export default definePlugin({
     },
     required: true,
 
+    customEntries,
+
     patches: [
         {
             find: ".buildLayout().map",
@@ -98,9 +107,10 @@ export default definePlugin({
                 type: LayoutTypes.SECTION,
                 useTitle: () => "Majic",
                 buildLayout: () => [
-                    sidebarItem("majic_main", "settings.majic", "MagicWandIcon", MajicTab),
-                    sidebarItem("majic_plugins", "settings.plugins", "PuzzlePieceIcon", PluginsTab),
-                    sidebarItem("majic_themes", "settings.themes", "PaintbrushThinIcon", ThemesTab)
+                    sidebarItem({ key: "majic_main", title: () => t("settings.majic"), Icon: "MagicWandIcon", Component: MajicTab }),
+                    sidebarItem({ key: "majic_plugins", title: () => t("settings.plugins"), Icon: "PuzzlePieceIcon", Component: PluginsTab }),
+                    sidebarItem({ key: "majic_themes", title: () => t("settings.themes"), Icon: "PaintbrushThinIcon", Component: ThemesTab }),
+                    ...customEntries.map(sidebarItem)
                 ]
             };
 
