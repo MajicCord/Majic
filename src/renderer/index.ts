@@ -16,7 +16,10 @@ const logger = new Logger("Core");
 initWebpackHook();
 Plugins.registerPatches();
 Plugins.startAllPlugins("Init");
-Webpack.onceReady.then(() => Plugins.startAllPlugins("WebpackReady"));
+Webpack.onceReady.then(() => {
+    Plugins.startAllPlugins("WebpackReady");
+    setTimeout(Webpack.Common.reportCommons, 5_000);
+});
 
 async function injectQuickCss() {
     if (!settings.useQuickCss) return;

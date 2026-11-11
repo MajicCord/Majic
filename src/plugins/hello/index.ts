@@ -4,7 +4,7 @@
 
 import { definePlugin } from "@utils/types";
 import { Logger } from "@utils/logger";
-import { findStore } from "@webpack";
+import { showToast, Stores } from "@webpack/common";
 
 const logger = new Logger("Hello", "#ffb86c");
 
@@ -25,6 +25,8 @@ export default definePlugin({
     }`,
 
     start() {
-        logger.info("Hello from Majic! Logged in as", findStore("UserStore")?.getCurrentUser()?.username);
+        const username = Stores.UserStore?.getCurrentUser()?.username;
+        logger.info("Hello from Majic! Logged in as", username);
+        showToast({ text: `Majic loaded, hi ${username}!`, variant: "success" });
     }
 });
