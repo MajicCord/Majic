@@ -3,7 +3,10 @@
  */
 
 import { saveSettings, settings } from "@api/settings";
-import { Stores } from "@webpack/common";
+import { filters, find } from "@webpack";
+
+let themeStore: any;
+const getThemeStore = () => themeStore ??= find(filters.byStoreName("ThemeStore"), { isIndirect: true }) ?? undefined;
 
 let root: HTMLElement | undefined;
 let quickCssStyle: HTMLStyleElement | undefined;
@@ -27,7 +30,7 @@ function createStyle(id: string) {
 }
 
 function activeTheme(): "light" | "dark" | undefined {
-    const theme = Stores.ThemeStore?.theme;
+    const theme = getThemeStore()?.theme;
     if (theme == null) return undefined;
     return theme === "light" ? "light" : "dark";
 }
@@ -98,7 +101,7 @@ export function initThemes() {
 }
 
 export function initThemeStoreListener() {
-    const store = Stores.ThemeStore;
+    const store = getThemeStore();
     if (!store) return;
 
     let currentTheme = store.theme;
