@@ -4,8 +4,10 @@
 
 import { IpcEvents } from "@shared/IpcEvents";
 import { onceDefined } from "@shared/onceDefined";
+import { initPluginNatives } from "./ipcPlugins";
+import { DATA_DIR, RendererSettings } from "./settings";
 import { persistAfterUpdates } from "./persistAfterUpdates";
-import electron, { app, ipcMain, session, type BrowserWindowConstructorOptions } from "electron";
+import electron, { app, ipcMain, session, shell, type BrowserWindowConstructorOptions } from "electron";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -34,9 +36,8 @@ require(discordMain);
 
 function initMajic() {
     persistAfterUpdates();
+    initPluginNatives();
 
-    const DATA_DIR = join(app.getPath("appData"), "Majic");
-    const SETTINGS_FILE = join(DATA_DIR, "settings.json");
     const QUICK_CSS_FILE = join(DATA_DIR, "quickCss.css");
 
     mkdirSync(DATA_DIR, { recursive: true });
@@ -50,10 +51,20 @@ function initMajic() {
     };
 
     ipcMain.on(IpcEvents.GET_SETTINGS, e => {
-        e.returnValue = readText(SETTINGS_FILE, "{}");
+        e.returnValue = RendererSettings.raw;
     });
     ipcMain.handle(IpcEvents.SET_SETTINGS, (_, json: string) => {
-        writeFileSync(SETTINGS_FILE, json);
+        RendererSettings.setRaw(json);
+    });
+    ipcMain.handle(IpcEvents.OPEN_EXTERNAL, (_, url: string) => {
+        let protocol: string;
+        try {
+            ({ protocol } = new URL(url));
+        } catch {
+            throw new Error("Malformed URL");
+        }
+        if (!["https:", "http:", "steam:", "spotify:", "com.epicgames.launcher:", "tidal:", "itunes:"].includes(protocol)) throw new Error("Disallowed protocol");
+        shell.openExternal(url).catch(err => console.error("[Majic] Failed to open external link", url, err));
     });
     ipcMain.handle(IpcEvents.GET_QUICK_CSS, () => readText(QUICK_CSS_FILE, ""));
     ipcMain.handle(IpcEvents.SET_QUICK_CSS, (_, css: string) => writeFileSync(QUICK_CSS_FILE, css));

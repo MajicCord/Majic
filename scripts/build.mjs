@@ -3,7 +3,7 @@
  */
 
 import { context, build } from "esbuild";
-import { readdirSync, existsSync } from "node:fs";
+import { readdirSync, existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -31,6 +31,42 @@ const pluginsGlob = {
     }
 };
 
+const PLUGIN_NAME_MATCHER = /definePlugin\(\{\s*name:\s*["'`](.+?)["'`]/;
+
+function resolvePluginName(dir) {
+    const entry = ["index.ts", "index.tsx"].map(file => join(dir, file)).find(existsSync);
+    const name = entry && PLUGIN_NAME_MATCHER.exec(readFileSync(entry, "utf-8"))?.[1];
+    if (!name) throw new Error(`Invalid plugin ${dir}: definePlugin must start with a string name`);
+    return name;
+}
+
+const pluginNativesGlob = {
+    name: "majic-plugin-natives",
+    setup(b) {
+        b.onResolve({ filter: /^~pluginNatives$/ }, () => ({ path: "~pluginNatives", namespace: "majic-plugin-natives" }));
+        b.onLoad({ filter: /.*/, namespace: "majic-plugin-natives" }, () => {
+            const natives = readdirSync(PLUGINS_DIR, { withFileTypes: true })
+                .filter(d => d.isDirectory())
+                .map(d => {
+                    const dir = join(PLUGINS_DIR, d.name);
+                    const file = [join(dir, "native.ts"), join(dir, "native", "index.ts")].find(existsSync);
+                    return file && { file, name: resolvePluginName(dir) };
+                })
+                .filter(Boolean);
+            const imports = natives.map(({ file }, i) => `import * as n${i} from ${JSON.stringify(file)};`);
+            const entries = natives.map(({ name }, i) => `${JSON.stringify(name)}: n${i}`);
+            return {
+                contents: `${imports.join("
+")}
+export default { ${entries.join(", ")} };`,
+                resolveDir: PLUGINS_DIR,
+                loader: "ts",
+                watchDirs: [PLUGINS_DIR]
+            };
+        });
+    }
+};
+
 const common = {
     bundle: true,
     sourcemap: dev ? "inline" : false,
@@ -48,7 +84,8 @@ const configs = [
         outfile: join(ROOT, "dist/patcher.js"),
         platform: "node",
         format: "cjs",
-        external: ["electron", "original-fs"]
+        external: ["electron", "original-fs"],
+        plugins: [pluginNativesGlob]
     },
     {
         ...common,

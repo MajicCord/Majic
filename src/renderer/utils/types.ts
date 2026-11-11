@@ -123,6 +123,12 @@ export interface PluginDef {
 
 export type Plugin = PluginDef & { started: boolean };
 
+export type PluginNative<PluginExports extends Record<string, any>> = {
+    [K in keyof PluginExports]: PluginExports[K] extends (event: any, ...args: infer Args) => infer Return
+        ? (...args: Args) => Return extends Promise<any> ? Return : Promise<Return>
+        : never;
+};
+
 export function definePlugin<P extends PluginDef>(plugin: P & ThisType<P>): P {
     return plugin;
 }

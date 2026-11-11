@@ -21,6 +21,7 @@
       "@components/*": ["src/renderer/components/*"],
       "@renderer/*": ["src/renderer/*"],
       "@i18n": ["src/renderer/i18n/index.ts"],
+      "@main/*": ["src/main/*"],
       "@shared/*": ["src/shared/*"]
     }
   },
