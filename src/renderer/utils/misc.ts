@@ -113,3 +113,16 @@ export function useAwaiter<T>(factory: () => Promise<T>, options: { fallbackValu
 
     return [state.value, state.error, state.pending];
 }
+
+export function mergeDefaults<T>(obj: T, defaults: T): T {
+    for (const key in defaults) {
+        const value = defaults[key];
+        if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+            obj[key] ??= {} as any;
+            mergeDefaults(obj[key], value);
+        } else {
+            obj[key] ??= value;
+        }
+    }
+    return obj;
+}

@@ -3,6 +3,7 @@
  */
 
 import { Logger } from "@utils/logger";
+import { mergeDefaults } from "@utils/misc";
 import { findByCodeLazy } from "@webpack";
 import { MessageActions, SnowflakeUtils } from "@webpack/common";
 
@@ -86,9 +87,10 @@ const registered = new Map<string, any>();
 
 const createBotMessage = findByCodeLazy('username:"Clyde"');
 
-export function sendBotMessage(channelId: string, message: Record<string, unknown>) {
+export function sendBotMessage(channelId: string, message: Record<string, any>): any {
     const botMessage = createBotMessage({ channelId, content: "", embeds: [] });
-    MessageActions.receiveMessage(channelId, { ...botMessage, ...message, author: { ...botMessage.author, ...(message.author as object) } });
+    MessageActions.receiveMessage(channelId, mergeDefaults(message, botMessage));
+    return message;
 }
 
 export function findOption<T = string>(args: CommandArgument[], name: string, fallback?: T): T | undefined {
