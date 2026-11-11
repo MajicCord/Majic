@@ -58,7 +58,7 @@ export function PluginsTab() {
     const [filter, setFilter] = useState<Filter>("all");
     const [restartNeeded, setRestartNeeded] = useState(false);
 
-    const sorted = useMemo(() => Object.values(plugins).sort((a, b) => a.name.localeCompare(b.name)), []);
+    const sorted = useMemo(() => Object.values(plugins).filter(plugin => !plugin.hidden).sort((a, b) => a.name.localeCompare(b.name)), []);
     const query = search.trim().toLowerCase();
 
     const filters = [

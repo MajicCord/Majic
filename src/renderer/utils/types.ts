@@ -115,6 +115,7 @@ export interface PluginDef {
     memberListDecorators?: Record<string, import("@api/memberListDecorators").MemberListDecorator>;
     userProfileBadge?: import("@api/badges").ProfileBadge;
     settingsAboutComponent?: ComponentType;
+    hidden?: boolean;
     translations?: Record<string, { description?: string; options?: Record<string, string> }>;
     start?(): void;
     stop?(): void;
