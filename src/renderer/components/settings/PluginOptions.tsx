@@ -40,7 +40,7 @@ function OptionEditor({ name, def, settings, label, onRestartNeeded }: OptionEdi
                 : <TextInput value={value ?? ""} placeholder={def.placeholder} onChange={set} />;
             break;
         case OptionType.NUMBER:
-            editor = <TextInput type="number" value={String(value ?? "")} placeholder={def.placeholder} onChange={v => set(v === "" ? undefined : Number(v))} />;
+            editor = <TextInput type="number" value={String(value ?? "")} placeholder={def.placeholder} onChange={v => set(v === "" ? undefined : Math.min(def.max ?? Infinity, Math.max(def.min ?? -Infinity, Number(v))))} />;
             break;
         case OptionType.BIGINT:
             editor = <TextInput value={String(value ?? "")} placeholder={def.placeholder} onChange={v => set(/^-?\d+$/.test(v) ? BigInt(v) : value)} />;

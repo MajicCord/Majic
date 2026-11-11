@@ -56,7 +56,7 @@ export interface SelectOption {
 
 export type PluginSettingDef =
     | OptionBase & { type: typeof OptionType.STRING; default?: string; placeholder?: string; multiline?: boolean; isValid?(value: string): boolean | string }
-    | OptionBase & { type: typeof OptionType.NUMBER; default?: number; placeholder?: string; isValid?(value: number): boolean | string }
+    | OptionBase & { type: typeof OptionType.NUMBER; default?: number; placeholder?: string; min?: number; max?: number; isValid?(value: number): boolean | string }
     | OptionBase & { type: typeof OptionType.BIGINT; default?: bigint; placeholder?: string; isValid?(value: bigint): boolean | string }
     | OptionBase & { type: typeof OptionType.BOOLEAN; default?: boolean }
     | OptionBase & { type: typeof OptionType.SELECT; options: readonly SelectOption[] }
