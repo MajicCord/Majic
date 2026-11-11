@@ -21,6 +21,7 @@
   },
   "packageManager": "pnpm@11.4.0",
   "dependencies": {
-    "@intrnl/xxhash64": "^0.1.2"
+    "@intrnl/xxhash64": "^0.1.2",
+    "gifenc": "github:mattdesl/gifenc#64842fca317b112a8590f8fef2bf3825da8f6fe3"
   }
 }
