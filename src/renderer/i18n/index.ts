@@ -18,7 +18,7 @@ let subscribed = false;
 let localeStore: any;
 
 function getLocaleStore() {
-    localeStore ??= find(filters.byStoreName("LocaleStore"), { silent: true }) ?? undefined;
+    localeStore ??= find(filters.byStoreName("LocaleStore"), { isIndirect: true }) ?? undefined;
     return localeStore;
 }
 

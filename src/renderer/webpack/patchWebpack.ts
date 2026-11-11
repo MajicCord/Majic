@@ -1,5 +1,6 @@
 /*
  * Majic — webpack patcher
+ * Adapted from Vencord, GPL-3.0-or-later
  */
 
 import { Logger } from "@utils/logger";
@@ -16,11 +17,14 @@ export interface RegisteredPatch extends Omit<Patch, "replacement"> {
 
 export const patches: RegisteredPatch[] = [];
 
-const ORIGINAL = Symbol.for("majic.webpack.original");
-const PATCHED_BY = Symbol.for("majic.webpack.patchedBy");
-const IGNORED_BUNDLES = ["sentry", "libdiscore", "fast-connect"];
+export const SYM_ORIGINAL_FACTORY = Symbol("Majic.originalFactory");
+export const SYM_PATCHED_BY = Symbol("Majic.patchedBy");
+const SYM_IS_PROXIED_FACTORY = Symbol("Majic.isProxiedFactory");
+const SYM_ORIGINAL_MODULE_FACTORIES = Symbol("Majic.originalModuleFactories");
 
-let mainInstance: WebpackRequire | undefined;
+const IGNORED_INSTANCES = ["sentry", "libdiscore", "fast-connect"];
+const allWebpackInstances = new Set<WebpackRequire>();
+let wreqFallbackApplied = false;
 
 export function reportPendingPatches() {
     const pending = patches.filter(p => !p.all);
@@ -28,93 +32,101 @@ export function reportPendingPatches() {
     for (const p of pending) logger.warn(`Patch by ${p.plugin} not applied yet, no module matched: ${p.find}`);
 }
 
+function define(target: object, key: PropertyKey, descriptor: PropertyDescriptor) {
+    if (Object.hasOwn(descriptor, "value")) descriptor.writable = true;
+    return Reflect.defineProperty(target, key, { configurable: true, enumerable: true, ...descriptor });
+}
+
+function defineInWebpackInstances(id: PropertyKey, factory: ModuleFactory) {
+    for (const instance of allWebpackInstances) define(instance.m, id, { value: factory });
+}
+
 function findMatches(code: string, find: string | RegExp) {
     if (typeof find === "string") return code.includes(find);
-    find.lastIndex = 0;
+    if (find.global) find.lastIndex = 0;
     return find.test(code);
 }
 
-function toExpression(factorySource: string) {
-    if (factorySource.startsWith("(")) return "0," + factorySource;
-    return "0,function" + factorySource.slice(factorySource.indexOf("("));
-}
-
-function compile(code: string, id: PropertyKey, plugins: Iterable<string>): ModuleFactory {
-    const header = `// Webpack module ${String(id)}, patched by ${[...plugins].join(", ")}`;
-    return (0, eval)(`${header}\n${code}\n//# sourceURL=MajicPatched/WebpackModule${String(id)}`);
-}
-
-function applyReplacements(code: string, patch: RegisteredPatch, id: PropertyKey): string | null {
-    let result = code;
-
-    for (const { match, replace, noWarn } of patch.replacement) {
-        if (match instanceof RegExp) match.lastIndex = 0;
-
-        let next: string;
-        try {
-            next = result.replace(match, replace as string);
-        } catch (err) {
-            logger.error(`Replacement by ${patch.plugin} threw on module ${String(id)}: ${match}`, err);
-            if (patch.group) return null;
-            continue;
-        }
-
-        if (next === result) {
-            if (!patch.noWarn && !noWarn) logger.warn(`Replacement by ${patch.plugin} had no effect on module ${String(id)}: ${match}`);
-            if (patch.group) return null;
-            continue;
-        }
-
-        result = next;
-    }
-
-    return result === code ? null : result;
-}
-
 function patchFactory(id: PropertyKey, original: ModuleFactory): ModuleFactory {
-    const source = String(original);
-    const matching = patches.filter(p => findMatches(source, p.find));
-    if (!matching.length) return original;
+    const originalCode = String(original);
+    const isArrow = originalCode.startsWith("(");
 
-    for (const patch of matching) {
-        if (!patch.all) patches.splice(patches.indexOf(patch), 1);
-    }
-
-    let code = toExpression(source);
+    let code = "0," + (isArrow ? "" : "function") + originalCode.slice(originalCode.indexOf("("));
     let factory = original;
-    const appliedBy: string[] = [];
+    const patchedBy = new Set<string>();
 
-    for (const patch of matching) {
-        const patched = applyReplacements(code, patch, id);
-        if (patched == null) {
-            if (patch.group) logger.warn(`Patch group by ${patch.plugin} was not applied to module ${String(id)}`);
-            continue;
+    for (let i = 0; i < patches.length; i++) {
+        const patch = patches[i];
+        if (!findMatches(originalCode, patch.find)) continue;
+
+        const previousCode = code;
+        const previousFactory = factory;
+        let markedAsPatched = false;
+        let restorePrevious = false;
+
+        for (const { match, replace, noWarn } of patch.replacement) {
+            if (typeof match !== "string" && match.global) match.lastIndex = 0;
+
+            try {
+                const newCode = code.replace(match, replace as string);
+
+                if (newCode === code) {
+                    if (!patch.noWarn && !noWarn) logger.warn(`Patch by ${patch.plugin} had no effect (module ${String(id)}): ${match}`);
+                    if (patch.group) {
+                        logger.warn(`Undoing patch group by ${patch.plugin} because ${match} had no effect`);
+                        restorePrevious = true;
+                        break;
+                    }
+                    continue;
+                }
+
+                const plugins = [...patchedBy];
+                if (!patchedBy.has(patch.plugin)) plugins.push(patch.plugin);
+
+                const newFactory = (0, eval)(`// Webpack module ${String(id)} - patched by ${plugins.join(", ")}\n${newCode}\n//# sourceURL=MajicPatched/WebpackModule${String(id)}`);
+
+                if (!patchedBy.has(patch.plugin)) {
+                    patchedBy.add(patch.plugin);
+                    markedAsPatched = true;
+                }
+                code = newCode;
+                factory = newFactory;
+            } catch (err) {
+                logger.error(`Patch by ${patch.plugin} errored (module ${String(id)}): ${match}`, err);
+                if (patch.group) {
+                    logger.warn(`Undoing patch group by ${patch.plugin} because ${match} errored`);
+                    restorePrevious = true;
+                    break;
+                }
+            }
         }
 
-        try {
-            factory = compile(patched, id, [...appliedBy, patch.plugin]);
-            code = patched;
-            appliedBy.push(patch.plugin);
-        } catch (err) {
-            const log = patch.noWarn ? logger.debug : logger.error;
-            log(`Patch by ${patch.plugin} produced invalid code for module ${String(id)}, skipping it`, err);
+        if (restorePrevious) {
+            code = previousCode;
+            factory = previousFactory;
+            if (markedAsPatched) patchedBy.delete(patch.plugin);
         }
+
+        if (!patch.all) patches.splice(i--, 1);
     }
 
-    if (factory === original) return original;
-
-    (original as any)[PATCHED_BY] = appliedBy;
-    const onlyBroadPatches = matching.every(p => p.all);
-    (onlyBroadPatches ? logger.debug : logger.info)(`Module ${String(id)} patched by ${appliedBy.join(", ")}`);
+    (factory as any)[SYM_ORIGINAL_FACTORY] = original;
+    if (factory !== original) {
+        (original as any)[SYM_PATCHED_BY] = patchedBy;
+        logger.info(`Module ${String(id)} patched by ${[...patchedBy].join(", ")}`);
+    }
     return factory;
 }
 
-function notifySubscribers(exports: any, id: PropertyKey) {
+function notifySubscribers(require: WebpackRequire, exports: any, id: PropertyKey) {
+    if (typeof require === "function" && require.c && quarantineUnsafeExports(require.c, exports, id)) return;
+    if (exports == null) return;
+
     for (const listener of moduleListeners) {
         try {
             listener(exports, id);
         } catch (err) {
-            logger.error("Error in a module listener", err);
+            logger.error("Error in a webpack module listener", err);
         }
     }
 
@@ -126,103 +138,161 @@ function notifySubscribers(exports: any, id: PropertyKey) {
         try {
             callback(match, id);
         } catch (err) {
-            logger.error("Error in a waitFor callback", err);
+            logger.error("Error in a webpack waitFor callback", err);
         }
     }
 }
 
-function claimMainInstance(require: WebpackRequire) {
-    if (wreq != null || typeof require !== "function" || !require.c) return;
-    if (mainInstance && require !== mainInstance) return;
+function runFactoryWithWrap(patched: ModuleFactory, id: PropertyKey, thisArg: unknown, args: Parameters<ModuleFactory>) {
+    const original: ModuleFactory = (patched as any)[SYM_ORIGINAL_FACTORY] ?? patched;
+    if (patched === original) delete (patched as any)[SYM_ORIGINAL_FACTORY];
 
-    _initWebpack(require);
-    logger.info("Got __webpack_require__");
-}
+    const [module, , require] = args;
 
-function wrapFactory(id: PropertyKey, original: ModuleFactory): ModuleFactory {
-    let runnable: ModuleFactory | undefined;
+    defineInWebpackInstances(id, original);
 
-    const wrapper = {
-        [String(id)](this: unknown, module: any, exports: any, require: WebpackRequire) {
-            claimMainInstance(require);
-            runnable ??= patchFactory(id, original);
-
-            try {
-                runnable.call(this, module, exports, require);
-            } catch (err) {
-                if (runnable === original) throw err;
-                logger.error(`Patched module ${String(id)} crashed, running the original instead`, err);
-                runnable = original;
-                original.call(this, module, exports, require);
-            }
-
-            const moduleExports = module?.exports;
-            if (moduleExports == null) return;
-            if (require?.c && quarantineUnsafeExports(require.c, moduleExports, id)) return;
-            notifySubscribers(moduleExports, id);
-        }
-    }[String(id)] as ModuleFactory;
-
-    Object.defineProperty(wrapper, ORIGINAL, { value: original });
-    wrapper.toString = () => original.toString();
-    return wrapper;
-}
-
-const isWrapped = (factory: unknown): factory is ModuleFactory => typeof factory === "function" && ORIGINAL in factory;
-
-function setOwn(target: object, key: PropertyKey, value: unknown) {
-    Object.defineProperty(target, key, { value, configurable: true, writable: true, enumerable: true });
-}
-
-function configurableExportsDefiner(exports: object, getters?: Record<string, () => unknown>, values?: Record<string, unknown>) {
-    for (const [definitions, kind] of [[getters, "get"], [values, "value"]] as const) {
-        for (const key in definitions) {
-            if (!Object.hasOwn(definitions, key) || Object.hasOwn(exports, key)) continue;
-            Object.defineProperty(exports, key, { enumerable: true, configurable: true, [kind]: definitions[key] });
+    if (wreq == null && !wreqFallbackApplied) {
+        wreqFallbackApplied = true;
+        if (typeof require === "function" && require.m != null && require.c != null) {
+            logger.warn(`__webpack_require__ was not initialized, falling back to the one passed to module ${String(id)}`);
+            _initWebpack(require);
         }
     }
-}
 
-function bundleNameFromStack() {
-    return /\/assets\/([^/:?#\s]+\.js)/.exec(new Error().stack ?? "")?.[1];
-}
-
-function interceptInstance(instance: WebpackRequire, modules: WebpackRequire["m"], bundle: string) {
-    for (const id in modules) {
-        if (!isWrapped(modules[id])) modules[id] = wrapFactory(id, modules[id]);
+    let result: unknown;
+    try {
+        result = patched.apply(thisArg, args);
+    } catch (err) {
+        if (patched === original) throw err;
+        logger.error(`Patched module ${String(id)} crashed, running the original instead`, err);
+        return original.apply(thisArg, args);
     }
 
-    setOwn(instance, "m", new Proxy(modules, {
-        set(target, id, factory) {
-            target[id as string] = isWrapped(factory) ? factory : wrapFactory(id, factory as ModuleFactory);
-            return true;
-        }
-    }));
-
-    Object.defineProperty(instance, "d", {
-        configurable: true,
-        enumerable: false,
-        set() {
-            setOwn(instance, "d", configurableExportsDefiner);
-        }
-    });
-
-    if (!mainInstance && bundle.startsWith("web.")) mainInstance = instance;
-    logger.info(`Intercepting webpack instance ${bundle}`);
+    notifySubscribers(require, module?.exports, id);
+    return result;
 }
+
+const moduleFactoryHandler: ProxyHandler<ModuleFactory> = {
+    apply(target, thisArg, args: Parameters<ModuleFactory>) {
+        const id = target.name;
+        if ((target as any)[SYM_ORIGINAL_FACTORY] != null) return runFactoryWithWrap(target, id, thisArg, args);
+        return runFactoryWithWrap(patchFactory(id, target), id, thisArg, args);
+    },
+
+    get(target, key, receiver) {
+        if (key === SYM_IS_PROXIED_FACTORY) return true;
+
+        const original = (target as any)[SYM_ORIGINAL_FACTORY] ?? target;
+        if (key === "toString" || key === SYM_PATCHED_BY) {
+            const value = Reflect.get(original, key, original);
+            return key === "toString" ? value.bind(original) : value;
+        }
+        return Reflect.get(target, key, receiver);
+    }
+};
+
+function updateExistingFactory(modules: WebpackRequire["m"], id: PropertyKey, factory: ModuleFactory, proxied: ModuleFactory, ignoreExistingInTarget: boolean) {
+    let existing: ModuleFactory | undefined;
+    for (const instance of allWebpackInstances) {
+        const instanceModules = (instance.m as any)[SYM_ORIGINAL_MODULE_FACTORIES] ?? instance.m;
+        if (ignoreExistingInTarget && instanceModules === modules) continue;
+        if (Object.hasOwn(instance.m, id)) {
+            existing = instance.m[id as string];
+            break;
+        }
+    }
+
+    if (existing == null) return false;
+
+    if ((existing as any)[SYM_ORIGINAL_FACTORY] != null) (existing as any)[SYM_ORIGINAL_FACTORY] = factory;
+    else defineInWebpackInstances(id, proxied);
+    return true;
+}
+
+function proxyFactoryAndUpdateExisting(modules: WebpackRequire["m"], id: PropertyKey, factory: ModuleFactory, receiver: unknown, ignoreExistingInTarget = false) {
+    const proxied = new Proxy(factory, moduleFactoryHandler);
+    if (updateExistingFactory(modules, id, factory, proxied, ignoreExistingInTarget)) return true;
+    return Reflect.set(modules, id, proxied, receiver);
+}
+
+const moduleFactoriesHandler: ProxyHandler<WebpackRequire["m"]> = {
+    get(target, key, receiver) {
+        if (key === SYM_ORIGINAL_MODULE_FACTORIES) return target;
+        return Reflect.get(target, key, receiver);
+    },
+    set: proxyFactoryAndUpdateExisting
+};
 
 export function initWebpackHook() {
-    Object.defineProperty(Function.prototype, "m", {
-        configurable: true,
+    define(Function.prototype, "m", {
         enumerable: false,
-        set(this: WebpackRequire, modules: WebpackRequire["m"]) {
-            setOwn(this, "m", modules);
-            if (!String(this).includes("exports:{}")) return;
 
-            const bundle = bundleNameFromStack();
-            if (!bundle || IGNORED_BUNDLES.some(name => bundle.toLowerCase().includes(name))) return;
+        set(this: WebpackRequire, originalModules: WebpackRequire["m"]) {
+            define(this, "m", { value: originalModules });
 
-            interceptInstance(this, modules, bundle);
+            const { stack } = new Error();
+            if (!stack?.includes("http") || /at \d+? \(/.test(stack) || !String(this).includes("exports:{}")) return;
+
+            const fileName = stack.match(/\/assets\/(.+?\.js)/)?.[1];
+            if (IGNORED_INSTANCES.some(name => fileName?.toLowerCase().includes(name))) return;
+
+            const instance = this;
+
+            const patchThisInstance = () => {
+                if (allWebpackInstances.has(instance)) return;
+                logger.info(`Found webpack module factories${fileName ? ` in ${fileName}` : ""}`);
+                allWebpackInstances.add(instance);
+
+                for (const id in originalModules) proxyFactoryAndUpdateExisting(originalModules, id, originalModules[id], originalModules, true);
+
+                define(originalModules, Symbol.toStringTag, { value: "ModuleFactories", enumerable: false });
+                define(instance, "m", { value: new Proxy(originalModules, moduleFactoriesHandler) });
+
+                (instance as any).d = function (exports: object, getters?: Record<PropertyKey, () => unknown>, values?: Record<PropertyKey, unknown>) {
+                    for (const [definitions, kind] of [[getters, "get"], [values, "value"]] as const) {
+                        for (const key in definitions) {
+                            if (Object.hasOwn(definitions, key) && !Object.hasOwn(exports, key)) {
+                                Object.defineProperty(exports, key, { enumerable: true, configurable: true, [kind]: definitions[key] });
+                            }
+                        }
+                    }
+                };
+            };
+
+            define(instance, "p", {
+                enumerable: false,
+                set(bundlePath: string) {
+                    define(this, "p", { value: bundlePath });
+                    clearTimeout(bundlePathTimeout);
+
+                    if (bundlePath !== "/assets/" || /(?:=>|{return)"[^"]+?"[^=]/.test(String((instance as any).u))) return;
+
+                    if (wreq == null && instance.c != null) {
+                        logger.info(`Main webpack instance found${fileName ? ` in ${fileName}` : ""}, initializing internal references`);
+                        _initWebpack(instance);
+                    }
+                    patchThisInstance();
+                }
+            });
+
+            define(instance, "O", {
+                enumerable: false,
+                set(onChunksLoaded: any) {
+                    define(this, "O", { value: onChunksLoaded });
+                    clearTimeout(onChunksLoadedTimeout);
+
+                    define(onChunksLoaded, "j", {
+                        enumerable: false,
+                        set(j: unknown) {
+                            define(this, "j", { value: j });
+                            if ((instance as any).p == null) patchThisInstance();
+                        }
+                    });
+                }
+            });
+
+            const bundlePathTimeout = setTimeout(() => Reflect.deleteProperty(instance, "p"), 0);
+            const onChunksLoadedTimeout = setTimeout(() => Reflect.deleteProperty(instance, "O"), 0);
         }
     });
 }

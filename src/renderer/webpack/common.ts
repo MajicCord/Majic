@@ -16,7 +16,7 @@ function common<T = any>(name: string, resolve: () => T): T {
     return proxyLazy(resolve);
 }
 
-const findSilently = (filter: FilterFn) => find(filter, { silent: true });
+const findSilently = (filter: FilterFn) => find(filter, { isIndirect: true });
 
 export function reportCommons() {
     const missing = [...registry].filter(([, resolve]) => {

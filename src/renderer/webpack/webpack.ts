@@ -35,6 +35,7 @@ export const moduleListeners = new Set<CallbackFn>();
 export function _initWebpack(require: WebpackRequire) {
     wreq = require;
     cache = require.c;
+    Reflect.defineProperty(require.c, Symbol.toStringTag, { value: "ModuleCache", configurable: true, writable: true, enumerable: false });
 }
 
 export function codeMatches(code: string, filter: CodeFilter) {
@@ -167,7 +168,8 @@ function reportMissing(method: string, args: unknown[]) {
 
 interface FindOptions {
     topLevelOnly?: boolean;
-    silent?: boolean;
+    isIndirect?: boolean;
+    isWaitFor?: boolean;
 }
 
 export function findExportLocation(filter: FilterFn): { exports: any; key: string } | null {
@@ -206,10 +208,14 @@ export function findWithId(filter: FilterFn, { topLevelOnly = false }: FindOptio
     return [null, null];
 }
 
-export function find(filter: FilterFn, options: FindOptions = {}) {
-    const [match] = findWithId(filter, options);
-    if (match == null && !options.silent) reportMissing("find", [filter]);
-    return match;
+export function find(filter: FilterFn, options: FindOptions & { isWaitFor: true }): [any, string | null];
+export function find(filter: FilterFn, options?: FindOptions): any;
+export function find(filter: FilterFn, { isIndirect = false, isWaitFor = false, topLevelOnly = false }: FindOptions = {}) {
+    if (typeof filter !== "function") throw new Error(`Invalid filter, expected a function but got ${typeof filter}`);
+
+    const [match, id] = findWithId(filter, { topLevelOnly });
+    if (match == null && !isIndirect) reportMissing("find", [filter]);
+    return isWaitFor ? [match, id] : match;
 }
 
 export function findAll(filter: FilterFn, { topLevelOnly = false }: FindOptions = {}) {
@@ -243,7 +249,7 @@ export function findBulk(...filterFns: FilterFn[]) {
 }
 
 function findOrReport(method: string, filter: FilterFn, args: unknown[], options: FindOptions = {}) {
-    const match = find(filter, { ...options, silent: true });
+    const match = find(filter, { ...options, isIndirect: true });
     if (match == null) reportMissing(method, args);
     return match;
 }
@@ -268,14 +274,14 @@ export const LazyComponentWebpack = <P extends object = any>(factory: () => any,
 const storeCache = new Map<string, any>();
 
 function indexFluxStores() {
-    const Flux = find(filters.byProps("connectStores"), { silent: true });
+    const Flux = find(filters.byProps("connectStores"), { isIndirect: true });
     for (const store of Flux?.Store?.getAll?.() ?? []) storeCache.set(store.getName(), store);
 }
 
 export function findStore(name: string) {
     if (!storeCache.has(name)) indexFluxStores();
     if (!storeCache.has(name)) {
-        const store = find(filters.byStoreName(name), { silent: true });
+        const store = find(filters.byStoreName(name), { isIndirect: true });
         if (store) storeCache.set(name, store);
     }
 
@@ -386,11 +392,14 @@ export const extractAndLoadChunksLazy = (code: CodeFilter, entryPointMatcher?: R
     makeLazy(() => extractAndLoadChunks(code, entryPointMatcher));
 
 export function waitFor(filter: string | PropsFilter | FilterFn, callback: CallbackFn) {
-    const fn = typeof filter === "function" ? filter : filters.byProps(...(Array.isArray(filter) ? filter : [filter]));
+    if (typeof filter === "string") filter = filters.byProps(filter);
+    else if (Array.isArray(filter)) filter = filters.byProps(...filter);
+    else if (typeof filter !== "function") throw new Error(`Invalid filter, expected a string, string[] or function but got ${typeof filter}`);
+    const fn = filter;
 
-    if (cache) {
-        const [match, id] = findWithId(fn);
-        if (match != null) return void callback(match, id!);
+    if (cache != null) {
+        const [match, id] = find(fn, { isIndirect: true, isWaitFor: true });
+        if (match) return void callback(match, id!);
     }
     waitForSubscriptions.set(fn, callback);
 }

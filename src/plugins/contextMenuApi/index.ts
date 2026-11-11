@@ -25,12 +25,15 @@ export default definePlugin({
             }
         },
         {
-            find: 'navId:"',
+            find: "navId:",
             all: true,
             noWarn: true,
             replacement: {
-                match: /(?<=[{,])navId:(?="[\w-]+")/g,
-                replace: 'majicMenuArgs:typeof arguments!=="undefined"?arguments:[],navId:'
+                match: /navId:(?=.+?([,}].*?\)))/g,
+                replace: (match: string, rest: string) => {
+                    if (/}=.+/.test(rest)) return match;
+                    return `majicMenuArgs:typeof arguments!=="undefined"?arguments:[],${match}`;
+                }
             }
         }
     ],
