@@ -9,6 +9,11 @@ export default definePlugin({
     name: "MessagePopoverAPI",
     description: "Lets plugins add buttons to the bar shown when hovering a message",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter des boutons à la barre qui apparaît au survol d'un message"
+        }
+    },
     required: true,
 
     patches: [

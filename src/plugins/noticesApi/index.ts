@@ -9,6 +9,11 @@ export default definePlugin({
     name: "NoticesAPI",
     description: "Lets plugins show banners at the top of Discord",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'afficher des bandeaux en haut de Discord"
+        }
+    },
     required: true,
 
     patches: [

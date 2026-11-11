@@ -9,6 +9,11 @@ export default definePlugin({
     name: "CommandsAPI",
     description: "Lets plugins add their own slash commands",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter leurs propres commandes slash"
+        }
+    },
     required: true,
 
     start: _installCommands,

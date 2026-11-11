@@ -2,6 +2,7 @@
  * Majic — plugins settings page
  */
 
+import { localized, t, useLocale } from "@i18n";
 import { isPluginEnabled, pluginRequiresRestart, plugins, setPluginEnabled } from "@renderer/plugins";
 import type { Plugin } from "@utils/types";
 import { DiscordIcon, React, showToast, useMemo, useReducer, useState } from "@webpack/common";
@@ -11,11 +12,7 @@ import { PluginOptions } from "./PluginOptions";
 
 type Filter = "all" | "enabled" | "disabled";
 
-const FILTERS = [
-    { label: "All plugins", value: "all" as Filter },
-    { label: "Enabled", value: "enabled" as Filter },
-    { label: "Disabled", value: "disabled" as Filter }
-];
+export const pluginDescription = (plugin: Plugin) => localized(plugin.translations, {} as { description?: string }).description ?? plugin.description;
 
 function PluginCard({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeeded(): void }) {
     const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -24,7 +21,7 @@ function PluginCard({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeed
 
     const toggle = (value: boolean) => {
         const ok = setPluginEnabled(plugin.name, value);
-        if (!ok) showToast({ text: `Could not ${value ? "start" : "stop"} ${plugin.name}`, variant: "critical" });
+        if (!ok) showToast({ text: t("plugins.toggleFailed", { action: t(value ? "plugins.start" : "plugins.stop"), name: plugin.name }), variant: "critical" });
         if (pluginRequiresRestart(plugin)) onRestartNeeded();
         rerender();
     };
@@ -35,12 +32,12 @@ function PluginCard({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeed
                 <div className="majic-row-grow">
                     <div className="majic-row" style={{ gap: 8 }}>
                         <Text><strong>{plugin.name}</strong></Text>
-                        {plugin.required && <span className="majic-muted">required</span>}
+                        {plugin.required && <span className="majic-muted">{t("plugins.required")}</span>}
                     </div>
-                    <Text muted>{plugin.description}</Text>
+                    <Text muted>{pluginDescription(plugin)}</Text>
                 </div>
                 {plugin.settings && (
-                    <button type="button" className="majic-icon-button" aria-label="Settings" onClick={() => setExpanded(!expanded)}>
+                    <button type="button" className="majic-icon-button" aria-label={t("plugins.settings")} onClick={() => setExpanded(!expanded)}>
                         <DiscordIcon name="SettingsIcon" size={18} color={expanded ? "var(--majic-accent)" : "currentColor"} />
                     </button>
                 )}
@@ -48,7 +45,7 @@ function PluginCard({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeed
             </div>
             {expanded && plugin.settings && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--background-modifier-accent)" }}>
-                    <PluginOptions settings={plugin.settings} onRestartNeeded={onRestartNeeded} />
+                    <PluginOptions plugin={plugin} onRestartNeeded={onRestartNeeded} />
                 </div>
             )}
         </Card>
@@ -56,6 +53,7 @@ function PluginCard({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeed
 }
 
 export function PluginsTab() {
+    useLocale();
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<Filter>("all");
     const [restartNeeded, setRestartNeeded] = useState(false);
@@ -63,27 +61,33 @@ export function PluginsTab() {
     const sorted = useMemo(() => Object.values(plugins).sort((a, b) => a.name.localeCompare(b.name)), []);
     const query = search.trim().toLowerCase();
 
+    const filters = [
+        { label: t("plugins.filter.all"), value: "all" as Filter },
+        { label: t("plugins.filter.enabled"), value: "enabled" as Filter },
+        { label: t("plugins.filter.disabled"), value: "disabled" as Filter }
+    ];
+
     const visible = sorted.filter(plugin => {
         if (filter === "enabled" && !isPluginEnabled(plugin.name)) return false;
         if (filter === "disabled" && isPluginEnabled(plugin.name)) return false;
-        return !query || plugin.name.toLowerCase().includes(query) || plugin.description.toLowerCase().includes(query);
+        return !query || plugin.name.toLowerCase().includes(query) || pluginDescription(plugin).toLowerCase().includes(query);
     });
 
     return (
         <Page>
-            <Heading>Plugins</Heading>
+            <Heading>{t("settings.plugins")}</Heading>
             {restartNeeded && (
                 <div className="majic-notice-card majic-row">
-                    <div className="majic-row-grow"><Text>Some changes need a reload to apply.</Text></div>
-                    <Button onClick={() => location.reload()}>Reload</Button>
+                    <div className="majic-row-grow"><Text>{t("plugins.reloadNeeded")}</Text></div>
+                    <Button onClick={() => location.reload()}>{t("plugins.reload")}</Button>
                 </div>
             )}
             <div className="majic-row">
-                <div className="majic-row-grow"><TextInput value={search} onChange={setSearch} placeholder="Search plugins..." /></div>
-                <div style={{ width: 160 }}><Select<Filter> value={filter} options={FILTERS} onChange={setFilter} /></div>
+                <div className="majic-row-grow"><TextInput value={search} onChange={setSearch} placeholder={t("plugins.search")} /></div>
+                <div style={{ width: 180 }}><Select<Filter> value={filter} options={filters} onChange={setFilter} /></div>
             </div>
             {visible.map(plugin => <PluginCard key={plugin.name} plugin={plugin} onRestartNeeded={() => setRestartNeeded(true)} />)}
-            {!visible.length && <Text muted>No plugin matches your search.</Text>}
+            {!visible.length && <Text muted>{t("plugins.noResults")}</Text>}
         </Page>
     );
 }

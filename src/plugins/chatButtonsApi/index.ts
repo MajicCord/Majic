@@ -9,6 +9,11 @@ export default definePlugin({
     name: "ChatButtonsAPI",
     description: "Lets plugins add buttons to the chat bar",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter des boutons à la barre de saisie"
+        }
+    },
     required: true,
 
     patches: [

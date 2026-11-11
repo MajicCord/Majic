@@ -6,6 +6,7 @@ import { MajicTab } from "@components/settings/MajicTab";
 import { PluginsTab } from "@components/settings/PluginsTab";
 import { ThemesTab } from "@components/settings/ThemesTab";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
+import { t } from "@i18n";
 import { Logger } from "@utils/logger";
 import { definePlugin } from "@utils/types";
 import { waitFor } from "@webpack";
@@ -37,18 +38,21 @@ interface LayoutBuilder {
 const SECTION_KEY = "majic_section";
 const PLACE_BEFORE = "billing_section";
 
-function sidebarItem(key: string, title: string, icon: string, Component: ComponentType) {
-    const Safe = () => <ErrorBoundary name={`${title} settings`} fallback={<p className="majic-text">Something went wrong in this page, check the console.</p>}><Component /></ErrorBoundary>;
+type TitleKey = "settings.majic" | "settings.plugins" | "settings.themes";
+
+function sidebarItem(key: string, titleKey: TitleKey, icon: string, Component: ComponentType) {
+    const title = () => t(titleKey);
+    const Safe = () => <ErrorBoundary name={`${titleKey} page`} fallback={<p className="majic-text">{t("settings.pageError")}</p>}><Component /></ErrorBoundary>;
 
     return {
         key,
         type: LayoutTypes.SIDEBAR_ITEM,
-        useTitle: () => title,
+        useTitle: title,
         icon: () => <DiscordIcon name={icon} />,
         buildLayout: () => [{
             key: `${key}_panel`,
             type: LayoutTypes.PANEL,
-            useTitle: () => title,
+            useTitle: title,
             buildLayout: () => [{
                 key: `${key}_category`,
                 type: LayoutTypes.CATEGORY,
@@ -56,7 +60,7 @@ function sidebarItem(key: string, title: string, icon: string, Component: Compon
                     key: `${key}_custom`,
                     type: LayoutTypes.CUSTOM,
                     Component: Safe,
-                    useSearchTerms: () => [title, "majic"]
+                    useSearchTerms: () => [title(), "majic"]
                 }]
             }]
         }]
@@ -67,6 +71,11 @@ export default definePlugin({
     name: "SettingsUI",
     description: "Adds Majic's pages to Discord's settings",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Ajoute les pages de Majic aux paramètres de Discord"
+        }
+    },
     required: true,
 
     patches: [
@@ -89,9 +98,9 @@ export default definePlugin({
                 type: LayoutTypes.SECTION,
                 useTitle: () => "Majic",
                 buildLayout: () => [
-                    sidebarItem("majic_main", "Majic", "MagicWandIcon", MajicTab),
-                    sidebarItem("majic_plugins", "Plugins", "PuzzlePieceIcon", PluginsTab),
-                    sidebarItem("majic_themes", "Themes", "PaintbrushThinIcon", ThemesTab)
+                    sidebarItem("majic_main", "settings.majic", "MagicWandIcon", MajicTab),
+                    sidebarItem("majic_plugins", "settings.plugins", "PuzzlePieceIcon", PluginsTab),
+                    sidebarItem("majic_themes", "settings.themes", "PaintbrushThinIcon", ThemesTab)
                 ]
             };
 

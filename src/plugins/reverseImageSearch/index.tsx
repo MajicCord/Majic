@@ -4,7 +4,13 @@
 
 import { findGroupChildrenByChildId, Menu } from "@api/contextMenu";
 import { definePlugin } from "@utils/types";
+import { createStrings } from "@i18n";
 import { React } from "@webpack/common";
+
+const s = createStrings({
+    en: { search: "Search image", all: "All engines" },
+    fr: { search: "Rechercher l'image", all: "Tous les moteurs" }
+});
 
 const ENGINES: Record<string, string> = {
     "Google Lens": "https://lens.google.com/uploadbyurl?url=",
@@ -21,12 +27,12 @@ const openSearch = (engine: string, src: string) => window.open(ENGINES[engine] 
 
 function searchItem(src: string) {
     return (
-        <Menu.MenuItem id="majic-search-image" key="majic-search-image" label="Search image">
+        <Menu.MenuItem id="majic-search-image" key="majic-search-image" label={s("search")}>
             {Object.keys(ENGINES).map(engine => (
                 <Menu.MenuItem key={engine} id={`majic-search-image-${engine}`} label={engine} action={() => openSearch(engine, src)} />
             ))}
             <Menu.MenuSeparator />
-            <Menu.MenuItem id="majic-search-image-all" label="All engines" action={() => Object.keys(ENGINES).forEach(engine => openSearch(engine, src))} />
+            <Menu.MenuItem id="majic-search-image-all" label={s("all")} action={() => Object.keys(ENGINES).forEach(engine => openSearch(engine, src))} />
         </Menu.MenuItem>
     );
 }
@@ -35,6 +41,11 @@ export default definePlugin({
     name: "ReverseImageSearch",
     description: "Adds a \"Search image\" item to image context menus, with Google Lens, Bing, Yandex and more",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Ajoute « Rechercher l'image » au menu clic droit des images, avec Google Lens, Bing, Yandex et plus"
+        }
+    },
 
     contextMenus: {
         message(children, props?: { itemSrc?: string; itemHref?: string }) {

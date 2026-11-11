@@ -4,7 +4,13 @@
 
 import { ApplicationCommandOptionType, findOption, type MajicCommand } from "@api/commands";
 import { definePlugin } from "@utils/types";
+import { createStrings } from "@i18n";
 import { showToast, Stores } from "@webpack/common";
+
+const s = createStrings({
+    en: { notListening: "You are not listening to anything on Spotify" },
+    fr: { notListening: "Tu n'écoutes rien sur Spotify" }
+});
 
 interface SpotifyTrack {
     id: string | null;
@@ -21,7 +27,7 @@ function shareCommand(name: string, link: (track: SpotifyTrack) => string | unde
             const track: SpotifyTrack | undefined = Stores.SpotifyStore?.getTrack();
             const url = track?.id ? link(track) : undefined;
             if (!url) {
-                showToast({ text: "You are not listening to anything on Spotify", variant: "critical" });
+                showToast({ text: s("notListening"), variant: "critical" });
                 return;
             }
 
@@ -35,6 +41,11 @@ export default definePlugin({
     name: "SpotifyShareCommands",
     description: "Share your current Spotify track, album or artist with /track, /album and /artist",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Partage le morceau, l'album ou l'artiste Spotify que tu écoutes avec /track, /album et /artist"
+        }
+    },
 
     commands: [
         shareCommand("track", track => `https://open.spotify.com/track/${track.id}`),

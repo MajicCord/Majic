@@ -9,6 +9,11 @@ export default definePlugin({
     name: "MemberListDecoratorsAPI",
     description: "Lets plugins add decorations next to names in the member list and DM list",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter des décorations à côté des noms dans la liste des membres et des MP"
+        }
+    },
     required: true,
 
     patches: [

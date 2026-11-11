@@ -9,6 +9,11 @@ export default definePlugin({
     name: "ContextMenuAPI",
     description: "Lets plugins add, remove and change items in Discord's context menus",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter, retirer et modifier des éléments des menus clic droit"
+        }
+    },
     required: true,
 
     patches: [

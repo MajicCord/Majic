@@ -3,6 +3,7 @@
  */
 
 import { enableStyle } from "@api/styles";
+import { t } from "@i18n";
 import { DiscordIcon, React, useEffect, useRef, useState } from "@webpack/common";
 import type { ReactNode } from "react";
 
@@ -85,7 +86,7 @@ export function TextArea({ value, onChange, placeholder }: { value: string; onCh
     return <textarea className="majic-textarea" spellCheck={false} value={value} placeholder={placeholder} onChange={e => onChange(e.currentTarget.value)} />;
 }
 
-export function Select<T extends string | number | boolean>({ value, options, onChange, placeholder = "Select..." }: { value: T; options: readonly { label: string; value: T }[]; onChange(value: T): void; placeholder?: string }) {
+export function Select<T extends string | number | boolean>({ value, options, onChange, placeholder }: { value: T; options: readonly { label: string; value: T }[]; onChange(value: T): void; placeholder?: string }) {
     const [open, setOpen] = useState(false);
     const [highlighted, setHighlighted] = useState(-1);
     const rootRef = useRef<HTMLDivElement>(null);
@@ -144,7 +145,7 @@ export function Select<T extends string | number | boolean>({ value, options, on
                 onClick={() => (open ? setOpen(false) : openList())}
                 onKeyDown={onKeyDown}
             >
-                <span className="majic-dropdown-label">{options[selectedIndex]?.label ?? placeholder}</span>
+                <span className="majic-dropdown-label">{options[selectedIndex]?.label ?? placeholder ?? t("ui.select")}</span>
                 <DiscordIcon name={open ? "ChevronSmallUpIcon" : "ChevronSmallDownIcon"} size={18} />
             </button>
             {open && (

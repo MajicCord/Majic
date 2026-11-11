@@ -3,7 +3,8 @@
  */
 
 import { getDefaultValue } from "@api/settings";
-import { type DefinedSettings, OptionType, type PluginSettingDef } from "@utils/types";
+import { localized, t } from "@i18n";
+import { type DefinedSettings, OptionType, type Plugin, type PluginSettingDef } from "@utils/types";
 import { React, useReducer } from "@webpack/common";
 
 import { Select, Slider, Switch, Text, TextInput } from "../ui";
@@ -12,10 +13,11 @@ interface OptionEditorProps {
     name: string;
     def: PluginSettingDef;
     settings: DefinedSettings<any>;
+    label: string;
     onRestartNeeded(): void;
 }
 
-function OptionEditor({ name, def, settings, onRestartNeeded }: OptionEditorProps) {
+function OptionEditor({ name, def, settings, label, onRestartNeeded }: OptionEditorProps) {
     const [, rerender] = useReducer((n: number) => n + 1, 0);
     const store = settings.store as Record<string, any>;
     const value = store[name] ?? getDefaultValue(def);
@@ -59,12 +61,12 @@ function OptionEditor({ name, def, settings, onRestartNeeded }: OptionEditorProp
         <div style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? "none" : undefined }}>
             {inline ? (
                 <div className="majic-row">
-                    <div className="majic-row-grow"><Text>{def.description}</Text></div>
+                    <div className="majic-row-grow"><Text>{label}</Text></div>
                     {editor}
                 </div>
             ) : (
                 <>
-                    <Text>{def.description}</Text>
+                    <Text>{label}</Text>
                     <div style={{ marginTop: 6 }}>{editor}</div>
                 </>
             )}
@@ -72,13 +74,15 @@ function OptionEditor({ name, def, settings, onRestartNeeded }: OptionEditorProp
     );
 }
 
-export function PluginOptions({ settings, onRestartNeeded }: { settings: DefinedSettings<any>; onRestartNeeded(): void }) {
+export function PluginOptions({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeeded(): void }) {
+    const settings = plugin.settings!;
+    const labels = localized(plugin.translations, {} as { options?: Record<string, string> }).options ?? {};
     const entries = Object.entries<PluginSettingDef>(settings.def).filter(([, def]) => !def.hidden?.call(settings) && def.type !== OptionType.CUSTOM);
-    if (!entries.length) return <Text muted>This plugin has no settings.</Text>;
+    if (!entries.length) return <Text muted>{t("plugins.noSettings")}</Text>;
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {entries.map(([name, def]) => <OptionEditor key={name} name={name} def={def} settings={settings} onRestartNeeded={onRestartNeeded} />)}
+            {entries.map(([name, def]) => <OptionEditor key={name} name={name} def={def} settings={settings} label={labels[name] ?? def.description} onRestartNeeded={onRestartNeeded} />)}
         </div>
     );
 }

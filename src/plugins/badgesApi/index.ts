@@ -9,6 +9,11 @@ export default definePlugin({
     name: "BadgesAPI",
     description: "Lets plugins add badges to user profiles",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter des badges aux profils"
+        }
+    },
     required: true,
 
     patches: [

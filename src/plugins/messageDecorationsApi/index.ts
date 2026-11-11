@@ -9,6 +9,11 @@ export default definePlugin({
     name: "MessageDecorationsAPI",
     description: "Lets plugins add elements under messages and decorations next to author names",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter des éléments sous les messages et des décorations à côté des auteurs"
+        }
+    },
     required: true,
 
     patches: [

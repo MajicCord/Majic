@@ -9,6 +9,11 @@ export default definePlugin({
     name: "MessageEventsAPI",
     description: "Lets plugins change or cancel messages before they are sent or edited, and react to message clicks",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins de modifier ou d'annuler un message avant son envoi ou sa modification, et de réagir aux clics"
+        }
+    },
     required: true,
 
     start: _installMessageEvents,

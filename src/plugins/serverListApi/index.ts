@@ -9,6 +9,11 @@ export default definePlugin({
     name: "ServerListAPI",
     description: "Lets plugins add elements to the server list",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Permet aux plugins d'ajouter des éléments à la liste des serveurs"
+        }
+    },
     required: true,
 
     patches: [

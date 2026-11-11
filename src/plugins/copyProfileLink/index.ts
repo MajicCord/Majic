@@ -4,7 +4,13 @@
 
 import { findGroupChildrenByChildId, Menu } from "@api/contextMenu";
 import { definePlugin } from "@utils/types";
+import { createStrings } from "@i18n";
 import { React, showToast } from "@webpack/common";
+
+const s = createStrings({
+    en: { label: "Copy Profile Link", copied: "Copied {name}'s profile link" },
+    fr: { label: "Copier le lien du profil", copied: "Lien du profil de {name} copié" }
+});
 
 function copyToClipboard(text: string) {
     const native = (window as any).DiscordNative?.clipboard;
@@ -16,6 +22,11 @@ export default definePlugin({
     name: "CopyProfileLink",
     description: "Adds a \"Copy Profile Link\" item to the user context menu",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Ajoute « Copier le lien du profil » au menu clic droit des utilisateurs"
+        }
+    },
     enabledByDefault: true,
 
     contextMenus: {
@@ -25,10 +36,10 @@ export default definePlugin({
 
             const item = React.createElement(Menu.MenuItem, {
                 id: "majic-copy-profile-link",
-                label: "Copy Profile Link",
+                label: s("label"),
                 action: () => {
                     copyToClipboard(`https://discord.com/users/${user.id}`);
-                    showToast({ text: `Copied ${user.username}'s profile link`, variant: "success" });
+                    showToast({ text: s("copied", { name: user.username }), variant: "success" });
                 }
             });
 

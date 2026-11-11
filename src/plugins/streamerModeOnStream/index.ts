@@ -15,6 +15,11 @@ export default definePlugin({
     name: "StreamerModeOnStream",
     description: "Turns streamer mode on while you are streaming, and off when you stop",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Active le mode streamer pendant que tu es en live, et le désactive quand tu arrêtes"
+        }
+    },
 
     flux: {
         STREAM_CREATE: ({ streamKey }: { streamKey: string }) => setStreamerMode(streamKey, true),

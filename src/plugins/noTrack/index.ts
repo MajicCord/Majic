@@ -48,6 +48,15 @@ export default definePlugin({
     name: "NoTrack",
     description: "Blocks Discord's analytics, metrics, Sentry crash reporting and client mod detection",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Bloque la télémétrie de Discord, ses métriques, les rapports de crash Sentry et la détection des mods clients",
+            options: {
+                blockAnalytics: "Bloquer la télémétrie de Discord",
+                keepBadgeProgress: "Continuer d'envoyer les quelques événements nécessaires à la progression des badges et des quêtes (temps de jeu, temps de stream)"
+            }
+        }
+    },
     required: true,
     startAt: "Init",
 

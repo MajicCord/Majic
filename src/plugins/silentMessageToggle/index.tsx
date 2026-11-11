@@ -5,7 +5,13 @@
 import { ChatBarButton } from "@api/chatButtons";
 import { definePluginSettings } from "@api/settings";
 import { definePlugin, OptionType } from "@utils/types";
+import { createStrings } from "@i18n";
 import { DiscordIcon, React, useEffect, useState } from "@webpack/common";
+
+const s = createStrings({
+    en: { on: "Silent mode on", off: "Send silently" },
+    fr: { on: "Mode silencieux activé", off: "Envoyer en silence" }
+});
 
 const settings = definePluginSettings({
     keepAcrossChannels: {
@@ -40,7 +46,7 @@ function SilentButton({ isMainChat }: { isMainChat: boolean }) {
     if (!isMainChat) return null;
 
     return (
-        <ChatBarButton tooltip={enabled ? "Silent mode on" : "Send silently"} onClick={() => setSilent(!enabled)}>
+        <ChatBarButton tooltip={enabled ? s("on") : s("off")} onClick={() => setSilent(!enabled)}>
             <DiscordIcon name={enabled ? "BellSlashIcon" : "BellIcon"} color={enabled ? "var(--majic-accent)" : "currentColor"} />
         </ChatBarButton>
     );
@@ -50,6 +56,15 @@ export default definePlugin({
     name: "SilentMessageToggle",
     description: "Adds a chat bar button to send messages without notifying anyone",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Ajoute un bouton à la barre de saisie pour envoyer des messages sans notifier personne",
+            options: {
+                keepAcrossChannels: "Garder le mode silencieux en changeant de salon",
+                turnOffAfterSending: "Désactiver le mode silencieux après l'envoi d'un message"
+            }
+        }
+    },
     settings,
 
     chatBarButtons: {

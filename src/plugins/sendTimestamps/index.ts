@@ -5,7 +5,13 @@
 import { ApplicationCommandOptionType, findOption } from "@api/commands";
 import { definePluginSettings } from "@api/settings";
 import { definePlugin, OptionType } from "@utils/types";
+import { createStrings } from "@i18n";
 import { showToast } from "@webpack/common";
+
+const s = createStrings({
+    en: { invalid: "Could not understand that time" },
+    fr: { invalid: "Impossible de comprendre cette heure" }
+});
 
 const FORMATS = [
     { name: "Relative (in 2 hours)", value: "R" },
@@ -54,6 +60,14 @@ export default definePlugin({
     name: "SendTimestamps",
     description: "Send Discord timestamps that show in everyone's own timezone, with /timestamp or by writing [18:30]",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Envoie des horaires affichés dans le fuseau horaire de chacun, avec /timestamp ou en écrivant [18:30]",
+            options: {
+                replaceInMessages: "Transformer les heures écrites comme [18:30] dans tes messages en horaires Discord"
+            }
+        }
+    },
     settings,
 
     commands: [
@@ -67,7 +81,7 @@ export default definePlugin({
             execute(args) {
                 const date = parseWhen(findOption<string>(args, "when") ?? "");
                 if (!date) {
-                    showToast({ text: "Could not understand that time", variant: "critical" });
+                    showToast({ text: s("invalid"), variant: "critical" });
                     return;
                 }
                 return { content: toTimestamp(date, findOption<string>(args, "format") ?? "f") };

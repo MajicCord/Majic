@@ -85,6 +85,11 @@ export default definePlugin({
     name: "ClearURLs",
     description: "Removes tracking parameters from links you send",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Retire les paramètres de pistage des liens que tu envoies"
+        }
+    },
 
     start() {
         void loadRules();

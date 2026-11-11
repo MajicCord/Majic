@@ -5,7 +5,13 @@
 import { Button, Select } from "@components/ui";
 import { definePluginSettings } from "@api/settings";
 import { definePlugin, OptionType } from "@utils/types";
+import { createStrings, t } from "@i18n";
 import { React, Stores, useEffect, useState } from "@webpack/common";
+
+const s = createStrings({
+    en: { systemDefault: "System default" },
+    fr: { systemDefault: "Voix par défaut du système" }
+});
 
 type EventType = "join" | "leave" | "move";
 
@@ -26,14 +32,14 @@ function VoicePicker({ setValue }: { setValue(value: string): void }) {
         return () => speechSynthesis.removeEventListener("voiceschanged", update);
     }, []);
 
-    const options = [{ label: "System default", value: "" }, ...voices.map(v => ({ label: `${v.name} (${v.lang})`, value: v.voiceURI }))];
+    const options = [{ label: s("systemDefault"), value: "" }, ...voices.map(v => ({ label: `${v.name} (${v.lang})`, value: v.voiceURI }))];
 
     return (
         <div className="majic-row">
             <div className="majic-row-grow">
                 <Select value={selected} options={options} onChange={value => { setSelected(value); setValue(value); }} />
             </div>
-            <Button variant="secondary" onClick={() => speak(format(settings.store.joinMessage, "Majic", "general"))}>Test</Button>
+            <Button variant="secondary" onClick={() => speak(format(settings.store.joinMessage, "Majic", "general"))}>{t("ui.test")}</Button>
         </div>
     );
 }
@@ -122,6 +128,20 @@ export default definePlugin({
     name: "VcNarrator",
     description: "Reads out loud when people join, leave or move in your voice channel",
     authors: [{ name: "SnailyStudios" }],
+    translations: {
+        fr: {
+            description: "Lit à voix haute quand quelqu'un rejoint, quitte ou change de salon vocal",
+            options: {
+                voice: "Voix du narrateur",
+                volume: "Volume",
+                rate: "Vitesse",
+                sayOwnName: "Dire ton propre nom quand tu rejoins, quittes ou changes de salon",
+                joinMessage: "Message d'arrivée ({{USER}} et {{CHANNEL}} sont remplacés)",
+                leaveMessage: "Message de départ",
+                moveMessage: "Message de changement de salon"
+            }
+        }
+    },
     settings,
 
     flux: {
