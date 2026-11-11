@@ -1,29 +1,34 @@
 /*
  * Majic — plugin natives IPC
- * Adapted from Vencord, GPL-3.0-or-later
  */
 
 import { IpcEvents } from "@shared/IpcEvents";
 import { ipcMain } from "electron";
 import PluginNatives from "~pluginNatives";
 
-const PluginIpcMappings: Record<string, Record<string, string>> = {};
-export type PluginIpcMappings = typeof PluginIpcMappings;
+type NativeMethod = (...args: any[]) => unknown;
 
-export function initPluginNatives() {
-    for (const [plugin, methods] of Object.entries(PluginNatives)) {
-        const entries = Object.entries(methods).filter(([, method]) => typeof method === "function");
-        if (!entries.length) continue;
+const channelsByPlugin = new Map<string, Record<string, string>>();
 
-        const mappings: Record<string, string> = PluginIpcMappings[plugin] = {};
-        for (const [methodName, method] of entries) {
-            const key = `MajicPluginNative_${plugin}_${methodName}`;
-            ipcMain.handle(key, method as (...args: any[]) => unknown);
-            mappings[methodName] = key;
-        }
+const channelName = (plugin: string, method: string) => `MajicPluginNative_${plugin}_${method}`;
+
+function registerPlugin(plugin: string, exports: Record<string, unknown>) {
+    const channels: Record<string, string> = {};
+
+    for (const [method, value] of Object.entries(exports)) {
+        if (typeof value !== "function") continue;
+        const channel = channelName(plugin, method);
+        ipcMain.handle(channel, value as NativeMethod);
+        channels[method] = channel;
     }
 
-    ipcMain.on(IpcEvents.GET_PLUGIN_IPC_METHOD_MAP, e => {
-        e.returnValue = PluginIpcMappings;
+    if (Object.keys(channels).length) channelsByPlugin.set(plugin, channels);
+}
+
+export function initPluginNatives() {
+    for (const [plugin, exports] of Object.entries(PluginNatives)) registerPlugin(plugin, exports);
+
+    ipcMain.on(IpcEvents.GET_PLUGIN_IPC_METHOD_MAP, event => {
+        event.returnValue = Object.fromEntries(channelsByPlugin);
     });
 }

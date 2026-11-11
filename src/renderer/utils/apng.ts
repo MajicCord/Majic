@@ -1,6 +1,5 @@
 /*
- * Majic — animated PNG parser
- * Adapted from Vencord, GPL-3.0-or-later
+ * Majic — animated PNG decoder
  */
 
 export const ApngDisposeOp = {
@@ -14,8 +13,6 @@ export const ApngBlendOp = {
     OVER: 1
 } as const;
 
-type Bytes = Uint8Array<ArrayBuffer>;
-
 export interface ApngFrame {
     width: number;
     height: number;
@@ -24,7 +21,6 @@ export interface ApngFrame {
     delay: number;
     disposeOp: number;
     blendOp: number;
-    dataParts?: Bytes[];
     img: HTMLImageElement;
 }
 
@@ -36,142 +32,157 @@ export interface ApngAnimation {
     frames: ApngFrame[];
 }
 
-const CRC_TABLE = new Uint32Array(256);
-for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let k = 0; k < 8; k++) c = (c & 1) ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
-    CRC_TABLE[i] = c;
+interface Chunk {
+    type: string;
+    data: Uint8Array<ArrayBuffer>;
+    raw: Uint8Array<ArrayBuffer>;
 }
 
-function crc32(bytes: Bytes, start = 0, length = bytes.length - start) {
-    let crc = -1;
-    for (let i = start, end = start + length; i < end; i++) crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ bytes[i]) & 0xFF];
-    return crc ^ -1;
+interface PendingFrame extends Omit<ApngFrame, "img"> {
+    data: Array<Uint8Array<ArrayBuffer>>;
 }
 
-const PNG_SIGNATURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const SIGNATURE = Uint8Array.of(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
 
-const readDWord = (bytes: Bytes, off: number) => ((bytes[off] << 24) >>> 0) + (bytes[off + 1] << 16) + (bytes[off + 2] << 8) + bytes[off + 3];
-const readWord = (bytes: Bytes, off: number) => (bytes[off] << 8) + bytes[off + 1];
-const readString = (bytes: Bytes, off: number, length: number) => String.fromCharCode(...bytes.subarray(off, off + length));
-const dwordBytes = (x: number) => [(x >>> 24) & 0xff, (x >>> 16) & 0xff, (x >>> 8) & 0xff, x & 0xff];
+const CRC_TABLE = Uint32Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let bit = 0; bit < 8; bit++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+});
 
-function copyBytes(bytes: Bytes, start: number, length: number): Bytes {
-    const copy = new Uint8Array(length);
-    copy.set(bytes.subarray(start, start + length));
-    return copy;
+function crc32(bytes: Uint8Array) {
+    let crc = 0xFFFFFFFF;
+    for (const byte of bytes) crc = CRC_TABLE[(crc ^ byte) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
-function makeChunk(type: string, data: Bytes): Bytes {
-    const crcLength = type.length + data.length;
-    const chunk = new Uint8Array(new ArrayBuffer(crcLength + 8));
-    chunk.set(dwordBytes(data.length), 0);
-    chunk.set(Array.from(type, char => char.charCodeAt(0)), 4);
+function readChunks(buffer: ArrayBuffer): Chunk[] {
+    const view = new DataView(buffer);
+    const bytes = new Uint8Array(buffer);
+    const chunks: Chunk[] = [];
+
+    for (let offset = SIGNATURE.length; offset + 12 <= bytes.length;) {
+        const length = view.getUint32(offset);
+        const type = String.fromCharCode(...bytes.subarray(offset + 4, offset + 8));
+        const end = offset + 12 + length;
+
+        chunks.push({
+            type,
+            data: bytes.slice(offset + 8, offset + 8 + length),
+            raw: bytes.slice(offset, end)
+        });
+
+        offset = end;
+        if (type === "IEND") break;
+    }
+
+    return chunks;
+}
+
+function buildChunk(type: string, data: Uint8Array): Uint8Array<ArrayBuffer> {
+    const chunk = new Uint8Array(new ArrayBuffer(12 + data.length));
+    const view = new DataView(chunk.buffer);
+
+    view.setUint32(0, data.length);
+    for (let i = 0; i < 4; i++) chunk[4 + i] = type.charCodeAt(i);
     chunk.set(data, 8);
-    chunk.set(dwordBytes(crc32(chunk, 4, crcLength)), crcLength + 4);
+    view.setUint32(8 + data.length, crc32(chunk.subarray(4, 8 + data.length)));
+
     return chunk;
 }
 
-function forEachChunk(bytes: Bytes, callback: (type: string, off: number, length: number) => boolean | void) {
-    let off = 8;
-    let type: string;
-    let keepGoing: boolean | void;
-    do {
-        const length = readDWord(bytes, off);
-        type = readString(bytes, off + 4, 4);
-        keepGoing = callback(type, off, length);
-        off += 12 + length;
-    } while (keepGoing !== false && type !== "IEND" && off < bytes.length);
+function readFrameControl(data: Uint8Array): Omit<PendingFrame, "data"> {
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const numerator = view.getUint16(20);
+    const denominator = view.getUint16(22) || 100;
+    const delay = (1000 * numerator) / denominator;
+
+    return {
+        width: view.getUint32(4),
+        height: view.getUint32(8),
+        left: view.getUint32(12),
+        top: view.getUint32(16),
+        delay: delay <= 10 ? 100 : delay,
+        disposeOp: data[24],
+        blendOp: data[25]
+    };
 }
 
-export function parseAPNG(buffer: ArrayBuffer): Promise<ApngAnimation> {
-    const bytes = new Uint8Array(buffer);
-
-    return new Promise((resolve, reject) => {
-        if (PNG_SIGNATURE.some((byte, i) => bytes[i] !== byte)) return reject("Not a PNG file (invalid file signature)");
-
-        let isAnimated = false;
-        forEachChunk(bytes, type => {
-            if (type !== "acTL") return true;
-            isAnimated = true;
-            return false;
-        });
-        if (!isAnimated) return reject("Not an animated PNG");
-
-        const preDataParts: Bytes[] = [];
-        const postDataParts: Bytes[] = [];
-        let headerData: Bytes | null = null;
-        let frame: ApngFrame | null = null;
-        const animation: ApngAnimation = { width: 0, height: 0, numPlays: 0, playTime: 0, frames: [] };
-
-        forEachChunk(bytes, (type, off, length) => {
-            switch (type) {
-                case "IHDR":
-                    headerData = bytes.subarray(off + 8, off + 8 + length);
-                    animation.width = readDWord(bytes, off + 8);
-                    animation.height = readDWord(bytes, off + 12);
-                    break;
-                case "acTL":
-                    animation.numPlays = readDWord(bytes, off + 12);
-                    break;
-                case "fcTL": {
-                    if (frame) animation.frames.push(frame);
-                    const delayNumerator = readWord(bytes, off + 28);
-                    const delayDenominator = readWord(bytes, off + 30) || 100;
-                    let delay = 1000 * delayNumerator / delayDenominator;
-                    if (delay <= 10) delay = 100;
-                    animation.playTime += delay;
-                    frame = {
-                        width: readDWord(bytes, off + 12),
-                        height: readDWord(bytes, off + 16),
-                        left: readDWord(bytes, off + 20),
-                        top: readDWord(bytes, off + 24),
-                        delay,
-                        disposeOp: bytes[off + 32],
-                        blendOp: bytes[off + 33],
-                        dataParts: [],
-                        img: null as unknown as HTMLImageElement
-                    };
-                    break;
-                }
-                case "fdAT":
-                    frame?.dataParts!.push(bytes.subarray(off + 12, off + 8 + length));
-                    break;
-                case "IDAT":
-                    frame?.dataParts!.push(bytes.subarray(off + 8, off + 8 + length));
-                    break;
-                case "IEND":
-                    postDataParts.push(copyBytes(bytes, off, 12 + length));
-                    break;
-                default:
-                    preDataParts.push(copyBytes(bytes, off, 12 + length));
-            }
-        });
-
-        if (frame) animation.frames.push(frame);
-        if (!animation.frames.length) return reject("Not an animated PNG");
-
-        let loadedImages = 0;
-        const preBlob = new Blob(preDataParts);
-        const postBlob = new Blob(postDataParts);
-
-        for (const current of animation.frames) {
-            const header = headerData!;
-            header.set(dwordBytes(current.width), 0);
-            header.set(dwordBytes(current.height), 4);
-
-            const parts: Array<Bytes | Blob> = [PNG_SIGNATURE, makeChunk("IHDR", header), preBlob];
-            for (const part of current.dataParts!) parts.push(makeChunk("IDAT", part));
-            parts.push(postBlob);
-            delete current.dataParts;
-
-            const img = current.img = new Image();
-            img.onload = () => {
-                URL.revokeObjectURL(img.src);
-                if (++loadedImages === animation.frames.length) resolve(animation);
-            };
-            img.onerror = () => reject("Image creation error");
-            img.src = URL.createObjectURL(new Blob(parts, { type: "image/png" }));
-        }
+function loadImage(parts: BlobPart[]) {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(img.src);
+            resolve(img);
+        };
+        img.onerror = () => reject("Image creation error");
+        img.src = URL.createObjectURL(new Blob(parts, { type: "image/png" }));
     });
+}
+
+export async function parseAPNG(buffer: ArrayBuffer): Promise<ApngAnimation> {
+    const signature = new Uint8Array(buffer, 0, Math.min(SIGNATURE.length, buffer.byteLength));
+    if (signature.length < SIGNATURE.length || SIGNATURE.some((byte, i) => signature[i] !== byte)) {
+        throw "Not a PNG file (invalid file signature)";
+    }
+
+    const chunks = readChunks(buffer);
+    if (!chunks.some(chunk => chunk.type === "acTL")) throw "Not an animated PNG";
+
+    const animation: Omit<ApngAnimation, "frames"> = { width: 0, height: 0, numPlays: 0, playTime: 0 };
+    const sharedChunks: Array<Uint8Array<ArrayBuffer>> = [];
+    const trailingChunks: Array<Uint8Array<ArrayBuffer>> = [];
+    const pending: PendingFrame[] = [];
+    let header: Uint8Array<ArrayBuffer> | undefined;
+
+    for (const chunk of chunks) {
+        const current = pending[pending.length - 1];
+
+        switch (chunk.type) {
+            case "IHDR": {
+                header = chunk.data;
+                const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
+                animation.width = view.getUint32(0);
+                animation.height = view.getUint32(4);
+                break;
+            }
+            case "acTL":
+                animation.numPlays = new DataView(chunk.data.buffer, chunk.data.byteOffset).getUint32(4);
+                break;
+            case "fcTL": {
+                const frame = { ...readFrameControl(chunk.data), data: [] };
+                animation.playTime += frame.delay;
+                pending.push(frame);
+                break;
+            }
+            case "fdAT":
+                current?.data.push(chunk.data.subarray(4));
+                break;
+            case "IDAT":
+                current?.data.push(chunk.data);
+                break;
+            case "IEND":
+                trailingChunks.push(chunk.raw);
+                break;
+            default:
+                sharedChunks.push(chunk.raw);
+        }
+    }
+
+    if (!header || !pending.length) throw "Not an animated PNG";
+
+    const shared = new Blob(sharedChunks);
+    const trailing = new Blob(trailingChunks);
+
+    const frames = await Promise.all(pending.map(({ data, ...frame }) => {
+        const frameHeader = header!.slice();
+        const view = new DataView(frameHeader.buffer);
+        view.setUint32(0, frame.width);
+        view.setUint32(4, frame.height);
+
+        const parts: BlobPart[] = [SIGNATURE, buildChunk("IHDR", frameHeader), shared, ...data.map(part => buildChunk("IDAT", part)), trailing];
+        return loadImage(parts).then(img => ({ ...frame, img }));
+    }));
+
+    return { ...animation, frames };
 }
