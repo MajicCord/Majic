@@ -44,7 +44,8 @@ const settings = definePluginSettings({
         type: OptionType.NUMBER,
         description: "Random characters length",
         default: 7,
-        disabled() { return this.store.method !== Methods.Random; }
+        disabled() { return this.store.method !== Methods.Random; },
+        min: 1
     },
     consistent: {
         type: OptionType.STRING,

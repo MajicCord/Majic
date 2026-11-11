@@ -10,7 +10,8 @@ const settings = definePluginSettings({
         type: OptionType.NUMBER,
         description: "Number of reactions (0-42)",
         default: 5,
-        isValid: (value: number) => value >= 0 && value <= 42
+        min: 0,
+        max: 42
     }
 });
 

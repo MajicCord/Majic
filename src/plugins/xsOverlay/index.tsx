@@ -98,7 +98,9 @@ const settings = definePluginSettings({
         default: 42070,
         async onChange() {
             await start().catch(() => { });
-        }
+        },
+        min: 1,
+        max: 65535
     },
     preferUDP: {
         type: OptionType.BOOLEAN,
@@ -148,7 +150,8 @@ const settings = definePluginSettings({
     timeout: {
         type: OptionType.NUMBER,
         description: "Notification duration (seconds)",
-        default: 3
+        default: 3,
+        min: 0
     },
     lengthBasedTimeout: {
         type: OptionType.BOOLEAN,

@@ -14,12 +14,16 @@ const settings = definePluginSettings({
     lightness: {
         type: OptionType.NUMBER,
         description: "Lightness, in %. Change it if the colors are too light or too dark",
-        default: 70
+        default: 70,
+        min: 0,
+        max: 100
     },
     saturation: {
         type: OptionType.NUMBER,
         description: "Saturation, in %. Change it if the colors are too vibrant or too dull",
-        default: 100
+        default: 100,
+        min: 0,
+        max: 100
     },
     seed: {
         type: OptionType.STRING,
