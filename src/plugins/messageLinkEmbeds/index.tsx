@@ -333,6 +333,7 @@ export default definePlugin({
     name: "MessageLinkEmbeds",
     description: "Adds a preview to messages that link another message",
     authors: [{ name: "SnailyStudios" }],
+    dependencies: ["MessageUpdaterAPI", "UserSettingsAPI"],
     translations: {
         fr: {
             description: "Ajoute un aperçu aux messages qui contiennent un lien vers un autre message",

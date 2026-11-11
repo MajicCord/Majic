@@ -25,13 +25,6 @@ export default definePlugin({
             }
         },
         {
-            find: "}renderStickersAccessories(",
-            replacement: {
-                match: /(?<=this\.props,\i,\[)"message",/,
-                replace: ""
-            }
-        },
-        {
             find: "#{intl::GUILD_COMMUNICATION_DISABLED_ICON_TOOLTIP_BODY}",
             replacement: {
                 match: /(?<=#{intl::GUILD_COMMUNICATION_DISABLED_BOTTOM_SHEET_TITLE}[^]+?renderPopout:[^]+?)(?=\])/,

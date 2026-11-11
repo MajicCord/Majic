@@ -219,6 +219,7 @@ export default definePlugin({
     name: "MessageLogger",
     description: "Temporarily logs deleted and edited messages",
     authors: [{ name: "SnailyStudios" }],
+    dependencies: ["MessageUpdaterAPI"],
     translations: {
         fr: {
             description: "Garde temporairement les messages supprimés et modifiés",
