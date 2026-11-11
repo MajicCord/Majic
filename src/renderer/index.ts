@@ -4,6 +4,7 @@
 
 import { Logger } from "@utils/logger";
 import { settings } from "@api/settings";
+import { enableStyle } from "@api/styles";
 import { initWebpackHook, reportPendingPatches } from "./webpack/patchWebpack";
 import * as Plugins from "./plugins";
 import * as Webpack from "./webpack";
@@ -24,11 +25,7 @@ Webpack.onceReady.then(() => {
 async function injectQuickCss() {
     if (!settings.useQuickCss) return;
     const css = await MajicNative.getQuickCss();
-    if (!css) return;
-    const style = document.createElement("style");
-    style.id = "majic-quickcss";
-    style.textContent = css;
-    document.head.append(style);
+    if (css) enableStyle("quickcss", css);
 }
 
 function onDomReady() {

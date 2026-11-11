@@ -56,6 +56,13 @@ function initMajic() {
         writeFileSync(SETTINGS_FILE, json);
     });
     ipcMain.handle(IpcEvents.GET_QUICK_CSS, () => readText(QUICK_CSS_FILE, ""));
+    ipcMain.handle(IpcEvents.WRITE_MODULE_DUMP, (_, id: string, code: string) => {
+        const dumpDir = join(DATA_DIR, "dumps");
+        mkdirSync(dumpDir, { recursive: true });
+        const file = join(dumpDir, `${String(id).replace(/[^\w-]/g, "_")}.js`);
+        writeFileSync(file, code);
+        return file;
+    });
     ipcMain.on(IpcEvents.GET_RENDERER_CODE, e => {
         e.returnValue = readFileSync(join(DIST_DIR, "renderer.js"), "utf-8");
     });

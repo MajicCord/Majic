@@ -170,6 +170,34 @@ interface FindOptions {
     silent?: boolean;
 }
 
+export function findExportLocation(filter: FilterFn): { exports: any; key: string } | null {
+    for (const [, exports] of loadedModules()) {
+        if (typeof exports !== "object") continue;
+        for (const key in exports) {
+            try {
+                if (exports[key] != null && filter(exports[key])) return { exports, key };
+            } catch { }
+        }
+    }
+    return null;
+}
+
+export function replaceExport(filter: FilterFn, replace: (original: any) => any): (() => void) | null {
+    const location = findExportLocation(filter);
+    if (!location) return null;
+
+    const { exports, key } = location;
+    const descriptor = Object.getOwnPropertyDescriptor(exports, key);
+    if (!descriptor?.configurable) {
+        logger.error(`Export ${key} is not configurable, cannot replace it`);
+        return null;
+    }
+
+    const original = exports[key];
+    Object.defineProperty(exports, key, { value: replace(original), configurable: true, enumerable: true, writable: true });
+    return () => Object.defineProperty(exports, key, descriptor);
+}
+
 export function findWithId(filter: FilterFn, { topLevelOnly = false }: FindOptions = {}): [any, string | null] {
     for (const [id, exports] of loadedModules()) {
         const match = matchExports(exports, filter, topLevelOnly);
@@ -364,6 +392,15 @@ export function waitFor(filter: string | PropsFilter | FilterFn, callback: Callb
         if (match != null) return void callback(match, id!);
     }
     waitForSubscriptions.set(fn, callback);
+}
+
+export async function dumpModule(moduleId: PropertyKey) {
+    const factory = wreq.m[moduleId as string];
+    if (!factory) throw new Error(`Module ${String(moduleId)} is not loaded`);
+
+    const file = await MajicNative.writeModuleDump(String(moduleId), String(factory));
+    logger.info(`Module ${String(moduleId)} written to ${file}`);
+    return file;
 }
 
 export function extract(moduleId: PropertyKey) {

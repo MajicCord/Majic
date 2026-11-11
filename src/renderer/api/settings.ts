@@ -12,19 +12,32 @@ export interface PluginSettings {
 export interface Settings {
     plugins: Record<string, PluginSettings>;
     useQuickCss: boolean;
+    notifications: {
+        useNative: "always" | "not-focused" | "never";
+        timeout: number;
+    };
 }
 
 const DEFAULTS: Settings = {
     plugins: {},
-    useQuickCss: true
+    useQuickCss: true,
+    notifications: {
+        useNative: "not-focused",
+        timeout: 5000
+    }
 };
 
 function load(): Settings {
+    let stored: Partial<Settings> = {};
     try {
-        return { ...DEFAULTS, ...JSON.parse(MajicNative.getSettings()) };
-    } catch {
-        return structuredClone(DEFAULTS);
-    }
+        stored = JSON.parse(MajicNative.getSettings());
+    } catch { }
+
+    return {
+        ...DEFAULTS,
+        ...stored,
+        notifications: { ...DEFAULTS.notifications, ...stored.notifications }
+    };
 }
 
 export const settings: Settings = load();

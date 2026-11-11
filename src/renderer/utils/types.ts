@@ -95,6 +95,16 @@ export interface PluginDef {
     settings?: DefinedSettings<any>;
     flux?: Record<string, (event: any) => void>;
     contextMenus?: Record<string, (children: any[], ...args: any[]) => void>;
+    onBeforeMessageSend?(channelId: string, message: { content: string; [key: string]: unknown }, options: Record<string, any>): void | { cancel: boolean } | Promise<void | { cancel: boolean }>;
+    onBeforeMessageEdit?(channelId: string, messageId: string, message: { content: string; [key: string]: unknown }): void | { cancel: boolean } | Promise<void | { cancel: boolean }>;
+    onMessageClick?(message: any, channel: any, event: MouseEvent): void;
+    commands?: import("@api/commands").MajicCommand[];
+    chatBarButtons?: Record<string, import("@api/chatButtons").ChatBarButtonRenderer>;
+    messagePopoverButtons?: Record<string, import("@api/messagePopover").MessagePopoverButtonFactory>;
+    messageAccessories?: Record<string, import("@api/messageDecorations").MessageAccessory>;
+    messageDecorations?: Record<string, import("@api/messageDecorations").MessageDecoration>;
+    memberListDecorators?: Record<string, import("@api/memberListDecorators").MemberListDecorator>;
+    badges?: import("@api/badges").ProfileBadge[];
     start?(): void;
     stop?(): void;
     [key: string]: unknown;

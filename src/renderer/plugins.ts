@@ -3,8 +3,23 @@
  */
 
 import allPlugins from "~plugins";
+import { addChatBarButton, removeChatBarButton } from "@api/chatButtons";
+import { registerCommand, unregisterCommand } from "@api/commands";
+import { addProfileBadge, removeProfileBadge } from "@api/badges";
+import { addMemberListDecorator, removeMemberListDecorator } from "@api/memberListDecorators";
+import { addMessageAccessory, addMessageDecoration, removeMessageAccessory, removeMessageDecoration } from "@api/messageDecorations";
+import { addMessagePopoverButton, removeMessagePopoverButton } from "@api/messagePopover";
 import { addContextMenuPatch, removeContextMenuPatch } from "@api/contextMenu";
+import {
+    addMessageClickListener,
+    addMessagePreEditListener,
+    addMessagePreSendListener,
+    removeMessageClickListener,
+    removeMessagePreEditListener,
+    removeMessagePreSendListener
+} from "@api/messageEvents";
 import { getPluginSettings, initPluginSettings, saveSettings } from "@api/settings";
+import { disableStyle, enableStyle } from "@api/styles";
 import { Logger } from "@utils/logger";
 import { canonicalizeMatch, canonicalizeReplacement } from "@utils/patches";
 import type { Plugin, StartAt } from "@utils/types";
@@ -107,23 +122,72 @@ waitFor(filters.byProps("dispatch", "subscribe"), dispatcher => {
     for (const p of Object.values(plugins)) if (p.started) subscribeFlux(p);
 });
 
-const styleElements = new Map<string, HTMLStyleElement>();
-
 function addStyle(p: Plugin) {
-    if (!p.css) return;
-    const style = document.createElement("style");
-    style.id = `majic-plugin-${p.name}`;
-    style.textContent = p.css;
-    styleElements.set(p.name, style);
-
-    if (document.head) document.head.append(style);
-    else document.addEventListener("DOMContentLoaded", () => styleElements.get(p.name) === style && document.head.append(style), { once: true });
+    if (p.css) enableStyle(`plugin-${p.name}`, p.css);
 }
 
 function removeStyle(p: Plugin) {
-    styleElements.get(p.name)?.remove();
-    styleElements.delete(p.name);
+    disableStyle(`plugin-${p.name}`);
 }
+
+interface PluginFeature {
+    attach(p: Plugin): void;
+    detach(p: Plugin): void;
+}
+
+const boundMethods = new WeakMap<Plugin, Map<string, (...args: any[]) => any>>();
+
+function bound(p: Plugin, key: string) {
+    if (!boundMethods.has(p)) boundMethods.set(p, new Map());
+    const cache = boundMethods.get(p)!;
+    if (!cache.has(key)) cache.set(key, (p[key] as (...args: any[]) => any).bind(p));
+    return cache.get(key)!;
+}
+
+function listenerFeature(key: "onBeforeMessageSend" | "onBeforeMessageEdit" | "onMessageClick", add: (fn: any) => unknown, remove: (fn: any) => unknown): PluginFeature {
+    return {
+        attach: p => typeof p[key] === "function" && void add(bound(p, key)),
+        detach: p => typeof p[key] === "function" && void remove(bound(p, key))
+    };
+}
+
+const pluginFeatures: PluginFeature[] = [
+    {
+        attach: p => Object.entries(p.contextMenus ?? {}).forEach(([navId, patch]) => addContextMenuPatch(navId, patch)),
+        detach: p => Object.entries(p.contextMenus ?? {}).forEach(([navId, patch]) => removeContextMenuPatch(navId, patch))
+    },
+    listenerFeature("onBeforeMessageSend", addMessagePreSendListener, removeMessagePreSendListener),
+    listenerFeature("onBeforeMessageEdit", addMessagePreEditListener, removeMessagePreEditListener),
+    listenerFeature("onMessageClick", addMessageClickListener, removeMessageClickListener),
+    {
+        attach: p => p.commands?.forEach(command => registerCommand(command, p.name)),
+        detach: p => p.commands?.forEach(command => unregisterCommand(command.name))
+    },
+    {
+        attach: p => Object.entries(p.chatBarButtons ?? {}).forEach(([id, render]) => addChatBarButton(`${p.name}-${id}`, render)),
+        detach: p => Object.keys(p.chatBarButtons ?? {}).forEach(id => removeChatBarButton(`${p.name}-${id}`))
+    },
+    {
+        attach: p => Object.entries(p.messagePopoverButtons ?? {}).forEach(([id, factory]) => addMessagePopoverButton(`${p.name}-${id}`, factory)),
+        detach: p => Object.keys(p.messagePopoverButtons ?? {}).forEach(id => removeMessagePopoverButton(`${p.name}-${id}`))
+    },
+    {
+        attach: p => Object.entries(p.messageAccessories ?? {}).forEach(([id, render]) => addMessageAccessory(`${p.name}-${id}`, render)),
+        detach: p => Object.keys(p.messageAccessories ?? {}).forEach(id => removeMessageAccessory(`${p.name}-${id}`))
+    },
+    {
+        attach: p => Object.entries(p.messageDecorations ?? {}).forEach(([id, render]) => addMessageDecoration(`${p.name}-${id}`, render)),
+        detach: p => Object.keys(p.messageDecorations ?? {}).forEach(id => removeMessageDecoration(`${p.name}-${id}`))
+    },
+    {
+        attach: p => Object.entries(p.memberListDecorators ?? {}).forEach(([id, render]) => addMemberListDecorator(`${p.name}-${id}`, render)),
+        detach: p => Object.keys(p.memberListDecorators ?? {}).forEach(id => removeMemberListDecorator(`${p.name}-${id}`))
+    },
+    {
+        attach: p => p.badges?.forEach(badge => addProfileBadge({ ...badge, id: `${p.name}-${badge.id}` })),
+        detach: p => p.badges?.forEach(badge => removeProfileBadge(`${p.name}-${badge.id}`))
+    }
+];
 
 export function startPlugin(p: Plugin) {
     if (p.started) return true;
@@ -139,7 +203,7 @@ export function startPlugin(p: Plugin) {
         addStyle(p);
         p.started = true;
         subscribeFlux(p);
-        for (const [navId, patch] of Object.entries(p.contextMenus ?? {})) addContextMenuPatch(navId, patch);
+        for (const feature of pluginFeatures) feature.attach(p);
         logger.info(`Started: ${p.name}`);
         return true;
     } catch (err) {
@@ -154,7 +218,7 @@ export function stopPlugin(p: Plugin) {
         p.stop?.();
         removeStyle(p);
         unsubscribeFlux(p);
-        for (const [navId, patch] of Object.entries(p.contextMenus ?? {})) removeContextMenuPatch(navId, patch);
+        for (const feature of pluginFeatures) feature.detach(p);
         p.started = false;
         logger.info(`Stopped: ${p.name}`);
         return true;

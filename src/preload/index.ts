@@ -8,7 +8,8 @@ import { contextBridge, ipcRenderer, webFrame } from "electron";
 const MajicNative = {
     getSettings: (): string => ipcRenderer.sendSync(IpcEvents.GET_SETTINGS),
     setSettings: (json: string): Promise<void> => ipcRenderer.invoke(IpcEvents.SET_SETTINGS, json),
-    getQuickCss: (): Promise<string> => ipcRenderer.invoke(IpcEvents.GET_QUICK_CSS)
+    getQuickCss: (): Promise<string> => ipcRenderer.invoke(IpcEvents.GET_QUICK_CSS),
+    writeModuleDump: (id: string, code: string): Promise<string> => ipcRenderer.invoke(IpcEvents.WRITE_MODULE_DUMP, id, code)
 };
 
 export type MajicNativeApi = typeof MajicNative;

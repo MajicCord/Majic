@@ -38,6 +38,7 @@ export function proxyLazy<T>(factory: () => T, maxTries = 5): T {
         set: (_, key, value) => Reflect.set(target(), key, value),
         has: (_, key) => key in target(),
         deleteProperty: (_, key) => Reflect.deleteProperty(target(), key),
+        defineProperty: (_, key, descriptor) => Reflect.defineProperty(target(), key, descriptor),
         apply: (_, thisArg, args) => Reflect.apply(target(), thisArg, args),
         construct: (_, args) => Reflect.construct(target(), args),
         getPrototypeOf: () => Reflect.getPrototypeOf(target()),
