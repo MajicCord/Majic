@@ -33,6 +33,13 @@ function* loadedMessageProxies(): Generator<any> {
     }
 }
 
+function hasMessage(messages: any, hashedKey: string) {
+    const loader = messages?.$$loader;
+    if (typeof loader?.getMessageValue !== "function") return false;
+    return loader.getMessageValue(hashedKey, i18n.intl.currentLocale) != null
+        || loader.getMessageValue(hashedKey, loader.defaultLocale) != null;
+}
+
 const missingSince = new Map<string, number>();
 
 function findMessages(hashedKey: string) {
@@ -43,7 +50,7 @@ function findMessages(hashedKey: string) {
     if (missing != null && Date.now() - missing < 5000) return i18n.t;
 
     for (const messages of [i18n.t, ...loadedMessageProxies()]) {
-        if (!i18n.intl.string(messages[hashedKey])) continue;
+        if (!hasMessage(messages, hashedKey)) continue;
         messagesByHash.set(hashedKey, messages);
         missingSince.delete(hashedKey);
         return messages;
