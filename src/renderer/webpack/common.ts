@@ -166,7 +166,7 @@ export const ExpressionPickerStore = mapMangledModuleLazy("expression-picker-las
 
 export const UserSummaryItem = common("UserSummaryItem", () => findSilently(filters.componentByCode("defaultRenderUser", "showDefaultAvatarsForNullUsers")));
 
-export const i18n = common<{ t: Record<string, any>; intl: { string(message: any): string; format(message: any, values: Record<PropertyKey, any>): any } }>("i18n", () =>
+export const i18n = common<{ t: Record<string, any>; intl: { currentLocale: string; string(message: any): string; format(message: any, values: Record<PropertyKey, any>): any } }>("i18n", () =>
     mapMangledModule(['defaultLocale:"en-US"', /initialLocale:\i/], {
         t: m => m?.[Symbol.toStringTag] === "IntlMessagesProxy",
         intl: m => m != null && Object.getPrototypeOf(m)?.withFormatters != null
