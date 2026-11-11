@@ -3,6 +3,7 @@
  */
 
 import allPlugins from "~plugins";
+import { addContextMenuPatch, removeContextMenuPatch } from "@api/contextMenu";
 import { getPluginSettings, initPluginSettings, saveSettings } from "@api/settings";
 import { Logger } from "@utils/logger";
 import { canonicalizeMatch, canonicalizeReplacement } from "@utils/patches";
@@ -138,6 +139,7 @@ export function startPlugin(p: Plugin) {
         addStyle(p);
         p.started = true;
         subscribeFlux(p);
+        for (const [navId, patch] of Object.entries(p.contextMenus ?? {})) addContextMenuPatch(navId, patch);
         logger.info(`Started: ${p.name}`);
         return true;
     } catch (err) {
@@ -152,6 +154,7 @@ export function stopPlugin(p: Plugin) {
         p.stop?.();
         removeStyle(p);
         unsubscribeFlux(p);
+        for (const [navId, patch] of Object.entries(p.contextMenus ?? {})) removeContextMenuPatch(navId, patch);
         p.started = false;
         logger.info(`Stopped: ${p.name}`);
         return true;

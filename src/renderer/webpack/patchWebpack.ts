@@ -96,14 +96,16 @@ function patchFactory(id: PropertyKey, original: ModuleFactory): ModuleFactory {
             code = patched;
             appliedBy.push(patch.plugin);
         } catch (err) {
-            logger.error(`Patch by ${patch.plugin} produced invalid code for module ${String(id)}, skipping it`, err);
+            const log = patch.noWarn ? logger.debug : logger.error;
+            log(`Patch by ${patch.plugin} produced invalid code for module ${String(id)}, skipping it`, err);
         }
     }
 
     if (factory === original) return original;
 
     (original as any)[PATCHED_BY] = appliedBy;
-    logger.info(`Module ${String(id)} patched by ${appliedBy.join(", ")}`);
+    const onlyBroadPatches = matching.every(p => p.all);
+    (onlyBroadPatches ? logger.debug : logger.info)(`Module ${String(id)} patched by ${appliedBy.join(", ")}`);
     return factory;
 }
 

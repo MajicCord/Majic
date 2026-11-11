@@ -94,6 +94,7 @@ export interface PluginDef {
     requiresRestart?: boolean;
     settings?: DefinedSettings<any>;
     flux?: Record<string, (event: any) => void>;
+    contextMenus?: Record<string, (children: any[], ...args: any[]) => void>;
     start?(): void;
     stop?(): void;
     [key: string]: unknown;
