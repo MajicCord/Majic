@@ -7,7 +7,7 @@ import { definePluginSettings } from "@api/settings";
 import { createStrings } from "@i18n";
 import { definePlugin, OptionType } from "@utils/types";
 import { filters, findComponentByCodeLazy, mapMangledModuleLazy } from "@webpack";
-import { FluxDispatcher, MessageActions, React } from "@webpack/common";
+import { ContextMenuApi, FluxDispatcher, MessageActions, React } from "@webpack/common";
 
 const s = createStrings({
     en: {
@@ -42,11 +42,6 @@ const GreetMode = {
 type GreetModeValue = typeof GreetMode[keyof typeof GreetMode];
 
 const MenuRoot = findComponentByCodeLazy('path:["empty"]');
-const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
-    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
-    openContextMenu: filters.byCode("renderLazy:"),
-    openContextMenuLazy: (e: unknown) => typeof e === "function" && e.toString().length < 100
-});
 
 const settings = definePluginSettings({
     greetMode: {

@@ -5,7 +5,7 @@
 import { definePluginSettings } from "@api/settings";
 import { getUserSettingLazy } from "@api/userSettings";
 import { createStrings } from "@i18n";
-import { getIntlMessage } from "@utils/discord";
+import { getCurrentChannel, getIntlMessage } from "@utils/discord";
 import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { classes } from "@utils/misc";
 import { definePlugin, OptionType } from "@utils/types";
@@ -42,10 +42,6 @@ const TimestampClasses = findCssClassesLazy("timestampInline", "timestamp");
 const MessageDisplayCompact = getUserSettingLazy<boolean>("textAndImages", "messageDisplayCompact")!;
 
 const AUTO_MODERATION_ACTION = 24;
-
-function getCurrentChannel() {
-    return Stores.ChannelStore.getChannel(Stores.SelectedChannelStore.getChannelId());
-}
 
 function useDiscordPronouns(id: string, useGlobalProfile = false): string | undefined {
     const globalPronouns: string | undefined = useStateFromStores([Stores.UserProfileStore], () => Stores.UserProfileStore.getUserProfile(id)?.pronouns);

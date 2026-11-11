@@ -6,17 +6,11 @@ import { Menu } from "@api/contextMenu";
 import { copyWithToast, openImageModal } from "@utils/discord";
 import { classes, formatDuration } from "@utils/misc";
 import { filters, mapMangledModuleLazy } from "@webpack";
-import { DiscordIcon, FluxDispatcher, React, useEffect, useState, useStateFromStores } from "@webpack/common";
+import { ContextMenuApi, DiscordIcon, FluxDispatcher, React, useEffect, useState, useStateFromStores } from "@webpack/common";
 
 import { SeekBar } from "./SeekBar";
 import { s, settings } from "./settings";
 import { SpotifyStore, type Track } from "./SpotifyStore";
-
-const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
-    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
-    openContextMenu: filters.byCode("renderLazy:"),
-    openContextMenuLazy: (e: any) => typeof e === "function" && e.toString().length < 100
-});
 
 const cl = (...names: string[]) => names.map(name => `majic-spotify-${name}`).join(" ");
 

@@ -85,23 +85,12 @@ export const settings = definePluginSettings({
 export const loadGetGuildPermissionSpecMap = extractAndLoadChunksLazy([".PRIMARY,badgeTooltipDelay:"]);
 export const { getGuildPermissionSpecMap } = findByPropsLazy("getGuildPermissionSpecMap");
 
-export const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
-    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
-    openContextMenu: filters.byCode("renderLazy:"),
-    openContextMenuLazy: (e: any) => typeof e === "function" && e.toString().length < 100
-});
-
-export const Popout = findComponentByCodeLazy("ref:this.ref,", "renderPopout:this.renderPopout,");
 export const Dialog = findComponentByCodeLazy('role:"dialog",tabIndex:-1');
 
 export const cl = (...names: Array<string | Record<string, boolean>>) => names
     .flatMap(name => typeof name === "string" ? [name] : Object.entries(name).filter(([, on]) => on).map(([key]) => key))
     .map(name => `majic-permviewer-${name}`)
     .join(" ");
-
-export function getUniqueUsername(user: any) {
-    return user.discriminator === "0" ? user.username : user.tag;
-}
 
 export function getSortedRolesForMember({ id: guildId }: { id: string }, member: { roles: string[] }) {
     return Stores.GuildRoleStore
@@ -128,3 +117,7 @@ export function sortPermissionOverwrites<T extends { id: string; type: number }>
         return roles[b.id].position - roles[a.id].position;
     });
 }
+
+export { ContextMenuApi, Popout } from "@webpack/common";
+
+export { getUniqueUsername } from "@utils/discord";

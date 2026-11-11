@@ -11,7 +11,7 @@ import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { classes } from "@utils/misc";
 import { definePlugin, OptionType } from "@utils/types";
 import { filters, findByPropsLazy, findCssClassesLazy, mapMangledModuleLazy } from "@webpack";
-import { DiscordIcon, Parser, Permissions, React, showToast, Stores, Tooltip, useMemo, UserSummaryItem, useStateFromStores } from "@webpack/common";
+import { ChannelRouter, DiscordIcon, Parser, Permissions, React, showToast, Stores, Tooltip, useMemo, UserSummaryItem, useStateFromStores } from "@webpack/common";
 
 const s = createStrings({
     en: { inVoice: "In Voice Chat", cannotJoin: "You cannot join the user's Voice Channel" },
@@ -19,11 +19,6 @@ const s = createStrings({
 });
 
 const { selectVoiceChannel } = findByPropsLazy("selectVoiceChannel", "selectChannel");
-
-const ChannelRouter = mapMangledModuleLazy('"Thread must have a parent ID."', {
-    transitionToChannel: filters.byCode(".openTextInVoiceIfVoiceChannel"),
-    transitionToThread: filters.byCode('"Thread must have a parent ID."')
-});
 
 const ActionButtonClasses = findCssClassesLazy("actionButton", "highlight");
 

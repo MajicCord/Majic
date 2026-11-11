@@ -6,13 +6,7 @@ import { findGroupChildrenByChildId } from "@api/contextMenu";
 import { getIntlMessage } from "@utils/discord";
 import { definePlugin } from "@utils/types";
 import { filters, findByCodeLazy, mapMangledModuleLazy, waitFor } from "@webpack";
-import { React, Stores } from "@webpack/common";
-
-const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
-    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
-    openContextMenu: filters.byCode("renderLazy:"),
-    openContextMenuLazy: (e: any) => typeof e === "function" && e.toString().length < 100
-});
+import { ContextMenuApi, React, Stores } from "@webpack/common";
 
 const useMessageMenu = findByCodeLazy(".MESSAGE,commandTargetId:");
 

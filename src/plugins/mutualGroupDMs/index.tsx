@@ -8,7 +8,7 @@ import { Logger } from "@utils/logger";
 import { classes } from "@utils/misc";
 import { definePlugin } from "@utils/types";
 import { filters, findByPropsLazy, findComponentLazy, findCssClassesLazy } from "@webpack";
-import { Clickable, IconUtils, React, ScrollerThin, Stores, useMemo } from "@webpack/common";
+import { Avatar, Clickable, IconUtils, React, ScrollerThin, Stores, useMemo, UsernameUtils } from "@webpack/common";
 import type { ComponentType, ReactNode } from "react";
 
 const s = createStrings({
@@ -31,8 +31,6 @@ const s = createStrings({
 });
 
 const SelectedChannelActionCreators = findByPropsLazy("selectPrivateChannel");
-const UsernameUtils = findByPropsLazy("useName", "getGlobalName");
-const Avatar = findComponentLazy(filters.componentByCode(".size-1.375*"));
 
 const ProfileListClasses = findCssClassesLazy("empty", "textContainer", "connectionIcon");
 const TabBarClasses = findCssClassesLazy("tabPanelScroller", "tabBarPanel");

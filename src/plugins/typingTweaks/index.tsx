@@ -9,7 +9,7 @@ import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { Logger } from "@utils/logger";
 import { definePlugin, OptionType } from "@utils/types";
 import { findComponentByCodeLazy } from "@webpack";
-import { React, Stores, useStateFromStores } from "@webpack/common";
+import { Avatar, React, Stores, useStateFromStores } from "@webpack/common";
 import type { ReactNode } from "react";
 
 const s = createStrings({
@@ -18,8 +18,6 @@ const s = createStrings({
 });
 
 const logger = new Logger("TypingTweaks", "#ff79c6");
-
-const Avatar = findComponentByCodeLazy(".size-1.375*");
 
 const settings = definePluginSettings({
     showAvatars: {

@@ -8,7 +8,7 @@ import { ensureUiStyles } from "@components/ui";
 import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { definePlugin, OptionType } from "@utils/types";
 import { filters, findComponentByCodeLazy, findCssClassesLazy, findStoreLazy, mapMangledModuleLazy } from "@webpack";
-import { Endpoints, React, RestAPI, Tooltip, useState } from "@webpack/common";
+import { Endpoints, React, RestAPI, SettingsRouter, Tooltip, useState } from "@webpack/common";
 
 import { NewButton, RenameButton } from "./components/RenameButton";
 import { s } from "./strings";
@@ -18,9 +18,6 @@ import { cl, fetchNamesFromDataStore, getDefaultName, getOsColor, getPlatformIco
 const AuthSessionsStore = findStoreLazy("AuthSessionsStore");
 const TimestampClasses = findCssClassesLazy("timestamp", "blockquoteContainer");
 const BlobMask = findComponentByCodeLazy("!1,lowerBadgeSize:");
-const SettingsRouter = mapMangledModuleLazy('type:"USER_SETTINGS_MODAL_OPEN"', {
-    openUserSettings: filters.byCode('type:"USER_SETTINGS_MODAL_OPEN"')
-});
 
 let checkInterval: ReturnType<typeof setInterval> | undefined;
 

@@ -7,7 +7,7 @@ import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { classes } from "@utils/misc";
 import { definePlugin } from "@utils/types";
 import { filters, findCssClassesLazy, mapMangledModuleLazy } from "@webpack";
-import { Clickable, DiscordIcon, FluxDispatcher, React } from "@webpack/common";
+import { Clickable, ContextMenuApi, DiscordIcon, FluxDispatcher, React } from "@webpack/common";
 
 import { contextMenus } from "./components/contextMenu";
 import { openCategoryModal, requireSettingsModal } from "./components/CreateCategoryModal";
@@ -16,12 +16,6 @@ import { canMoveCategory, canMoveCategoryInDirection, type Category, categoryLen
 import { PinOrder, PrivateChannelSortStore, s, settings } from "./settings";
 
 const headerClasses = findCssClassesLazy("privateChannelsHeaderContainer", "headerText");
-
-const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
-    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
-    openContextMenu: filters.byCode("renderLazy:"),
-    openContextMenuLazy: (e: any) => typeof e === "function" && e.toString().length < 100
-});
 
 export let instance: any;
 

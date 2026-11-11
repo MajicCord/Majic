@@ -7,7 +7,7 @@ import { Button, Card, SubHeading, Text } from "@components/ui";
 import { createStrings } from "@i18n";
 import { definePlugin, OptionType } from "@utils/types";
 import { filters, mapMangledModuleLazy } from "@webpack";
-import { FluxDispatcher, React, Stores } from "@webpack/common";
+import { ApplicationAssetUtils, FluxDispatcher, React, Stores } from "@webpack/common";
 
 import { LastFMScrobbler } from "./lastfm";
 import { invalidateListenBrainzCache, ListenBrainzScrobbler } from "./listenbrainz";
@@ -95,13 +95,6 @@ const ActivityStatusDisplayType = { NAME: 0, STATE: 1, DETAILS: 2 } as const;
 
 const DISCORD_APP_ID = "1108588077900898414";
 const LASTFM_PLACEHOLDER_IMAGE_HASH = "2a96cbd8b46e442fc41c2b86b821562f";
-
-const ApplicationAssetUtils = mapMangledModuleLazy("getAssetImage: size must === [", {
-    fetchAssetIds: filters.byCode('.startsWith("http:")', ".dispatch({"),
-    getAssetFromImageURL: filters.byCode("].serialize(", ":null"),
-    getAssetImage: filters.byCode("getAssetImage: size must === ["),
-    getAssets: filters.byCode(".assets")
-});
 
 async function getApplicationAsset(key: string): Promise<string> {
     return (await ApplicationAssetUtils.fetchAssetIds(DISCORD_APP_ID, [key]))[0];

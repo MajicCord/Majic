@@ -8,7 +8,7 @@ import { createStrings } from "@i18n";
 import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { definePlugin } from "@utils/types";
 import { findByPropsLazy, findComponentByCodeLazy } from "@webpack";
-import { DiscordIcon, React, Stores, useRef, useState, useStateFromStores } from "@webpack/common";
+import { DiscordIcon, Popout, React, Stores, useRef, useState, useStateFromStores } from "@webpack/common";
 
 const s = createStrings({
     en: { disable: "Disable Game Activity", enable: "Enable Game Activity", spotify: "Share Spotify Activity" },
@@ -23,7 +23,6 @@ interface ConnectedAccount {
 }
 
 const Button = findComponentByCodeLazy(".GREEN,positionKeyStemOverride:");
-const Popout = findComponentByCodeLazy("ref:this.ref,", "renderPopout:this.renderPopout,");
 const MenuRoot = findComponentByCodeLazy('path:["empty"]');
 const ConnectedAccountActions = findByPropsLazy("setShowActivity");
 

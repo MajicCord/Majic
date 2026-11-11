@@ -8,17 +8,11 @@ import { createStrings } from "@i18n";
 import { ErrorBoundary, withErrorBoundary } from "@utils/ErrorBoundary";
 import { definePlugin, OptionType } from "@utils/types";
 import { filters, findComponentByCodeLazy, mapMangledModuleLazy } from "@webpack";
-import { React, Stores } from "@webpack/common";
+import { ContextMenuApi, React, Stores } from "@webpack/common";
 
 const s = createStrings({
     en: { viewAccount: "View Account Profile", viewServer: "View Server Profile", prioritize: "Prioritize Server Profile" },
     fr: { viewAccount: "Voir le profil du compte", viewServer: "Voir le profil de serveur", prioritize: "Privilégier le profil de serveur" }
-});
-
-const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
-    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
-    openContextMenu: filters.byCode("renderLazy:"),
-    openContextMenuLazy: (e: any) => typeof e === "function" && e.toString().length < 100
 });
 
 const MenuRoot = findComponentByCodeLazy('path:["empty"]');

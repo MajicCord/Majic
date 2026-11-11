@@ -5,7 +5,7 @@
 import { DataStore } from "@api/dataStore";
 import { dismissNotice, showNotice } from "@api/notices";
 import { showNotification } from "@api/notifications";
-import { openUserProfile } from "@utils/discord";
+import { getUniqueUsername, openUserProfile } from "@utils/discord";
 import { findStoreLazy } from "@webpack";
 import { Stores, UserUtils } from "@webpack/common";
 
@@ -29,10 +29,6 @@ const friends = {
 const guildsKey = () => `relationship-notifier-guilds-${Stores.UserStore.getCurrentUser().id}`;
 const groupsKey = () => `relationship-notifier-groups-${Stores.UserStore.getCurrentUser().id}`;
 const friendsKey = () => `relationship-notifier-friends-${Stores.UserStore.getCurrentUser().id}`;
-
-export function getUniqueUsername(user: any) {
-    return user.discriminator === "0" ? user.username : user.tag;
-}
 
 export async function syncAndRunChecks() {
     if (Stores.UserStore.getCurrentUser() == null) return;
@@ -178,3 +174,5 @@ export async function syncFriends() {
 
     await DataStore.set(friendsKey(), friends);
 }
+
+export { getUniqueUsername } from "@utils/discord";

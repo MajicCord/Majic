@@ -11,7 +11,7 @@ import { makeLazy } from "@utils/lazy";
 import { classes } from "@utils/misc";
 import { definePlugin, OptionType } from "@utils/types";
 import { filters, findByCodeLazy, findByPropsLazy, findComponentByCodeLazy, findCssClassesLazy, mapMangledModuleLazy } from "@webpack";
-import { DiscordIcon, React, RoleMemberPopout, Stores, useRef, useState } from "@webpack/common";
+import { ContextMenuApi, DiscordIcon, Popout, React, RoleMemberPopout, Stores, useRef, useState } from "@webpack/common";
 
 const s = createStrings({
     en: {
@@ -30,14 +30,7 @@ const s = createStrings({
     }
 });
 
-const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
-    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
-    openContextMenu: filters.byCode("renderLazy:"),
-    openContextMenuLazy: (e: any) => typeof e === "function" && e.toString().length < 100
-});
-
 const MenuRoot = findComponentByCodeLazy('path:["empty"]');
-const Popout = findComponentByCodeLazy("ref:this.ref,", "renderPopout:this.renderPopout,");
 const GuildSettingsActions = findByPropsLazy("open", "selectRole", "updateGuild");
 const MenuItemClasses = findCssClassesLazy("item", "labelContainer", "colorDefault", "label", "iconContainer");
 const loadRoleMembers = findByCodeLazy(".GUILD_ROLE_MEMBER_IDS(", "requestMembersById");

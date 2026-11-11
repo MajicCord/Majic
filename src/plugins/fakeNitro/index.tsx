@@ -12,6 +12,7 @@ import { ApngBlendOp, ApngDisposeOp, parseAPNG } from "@utils/apng";
 import { ConfirmModal, DraftType, FluxDispatcher, IconUtils, openModal, Permissions, React, Stores, UploadHandler, UserSettingsActionCreators } from "@webpack/common";
 import { applyPalette, GIFEncoder, quantize } from "gifenc";
 import type { ReactElement, ReactNode } from "react";
+import { getCurrentGuild } from "@utils/discord";
 
 const s = createStrings({
     en: {
@@ -162,11 +163,6 @@ const hasAttachmentPerms = (channelId: string) => hasPermission(channelId, Permi
 
 function getWordBoundary(origStr: string, offset: number) {
     return (!origStr[offset] || /\s/.test(origStr[offset])) ? "" : " ";
-}
-
-function getCurrentGuild() {
-    const channel = Stores.ChannelStore.getChannel(Stores.SelectedChannelStore.getChannelId());
-    return Stores.GuildStore.getGuild(channel?.guild_id);
 }
 
 function CannotEmbedNoticeModal({ modalProps, resolve }: { modalProps: any; resolve: (value: boolean) => void }) {

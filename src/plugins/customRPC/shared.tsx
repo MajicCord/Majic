@@ -6,7 +6,7 @@ import { definePluginSettings } from "@api/settings";
 import { createStrings } from "@i18n";
 import { OptionType } from "@utils/types";
 import { filters, mapMangledModuleLazy } from "@webpack";
-import { FluxDispatcher, React } from "@webpack/common";
+import { ApplicationAssetUtils, FluxDispatcher, React } from "@webpack/common";
 
 export const s = createStrings({
     en: {
@@ -167,10 +167,6 @@ export interface PrivateSettings {
     partySize?: number;
     partyMaxSize?: number;
 }
-
-const ApplicationAssetUtils = mapMangledModuleLazy("getAssetImage: size must === [", {
-    fetchAssetIds: filters.byCode('.startsWith("http:")', ".dispatch({")
-});
 
 let RPCSettingsComponent: () => any = () => null;
 export const setRPCSettingsComponent = (component: () => any) => void (RPCSettingsComponent = component);
