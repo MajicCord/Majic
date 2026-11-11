@@ -33,6 +33,11 @@ export default {
     "majic.vibrancy.none": "No vibrancy",
     "majic.data": "Settings and data",
     "majic.openSettingsFolder": "Open settings folder",
+    "majic.export": "Export settings",
+    "majic.import": "Import settings",
+    "majic.importSuccess": "Settings imported. Restart Discord to apply them!",
+    "majic.importFailure": "Failed to import settings: {error}",
+    "majic.backupHint": "Save your settings and Quick CSS to a file, or restore them from one.",
 
     "plugins.search": "Search plugins...",
     "plugins.filter.all": "All plugins",

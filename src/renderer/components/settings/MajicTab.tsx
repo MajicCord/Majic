@@ -3,6 +3,7 @@
  */
 
 import { saveSettings, settings, type Settings } from "@api/settings";
+import { downloadSettingsBackup, uploadSettingsBackup } from "@api/settingsBackup";
 import { t, useLocale } from "@i18n";
 import { DiscordIcon, React, useReducer, useState } from "@webpack/common";
 
@@ -142,9 +143,18 @@ export function MajicTab() {
 
             <Card>
                 <SubHeading>{t("majic.data")}</SubHeading>
-                <Button variant="secondary" onClick={() => void MajicNative.openSettingsFolder()}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><DiscordIcon name="FolderIcon" size={16} />{t("majic.openSettingsFolder")}</span>
-                </Button>
+                <Text muted>{t("majic.backupHint")}</Text>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                    <Button onClick={() => void downloadSettingsBackup()}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><DiscordIcon name="DownloadIcon" size={16} />{t("majic.export")}</span>
+                    </Button>
+                    <Button variant="secondary" onClick={() => void uploadSettingsBackup()}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><DiscordIcon name="UploadIcon" size={16} />{t("majic.import")}</span>
+                    </Button>
+                    <Button variant="secondary" onClick={() => void MajicNative.openSettingsFolder()}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><DiscordIcon name="FolderIcon" size={16} />{t("majic.openSettingsFolder")}</span>
+                    </Button>
+                </div>
             </Card>
         </Page>
     );

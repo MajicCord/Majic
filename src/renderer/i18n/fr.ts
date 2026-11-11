@@ -35,6 +35,11 @@ const fr: Dictionary = {
     "majic.vibrancy.none": "Pas de vibrance",
     "majic.data": "Réglages et données",
     "majic.openSettingsFolder": "Ouvrir le dossier des réglages",
+    "majic.export": "Exporter les réglages",
+    "majic.import": "Importer des réglages",
+    "majic.importSuccess": "Réglages importés. Redémarre Discord pour les appliquer !",
+    "majic.importFailure": "Impossible d'importer les réglages : {error}",
+    "majic.backupHint": "Enregistre tes réglages et ton Quick CSS dans un fichier, ou restaure-les depuis un fichier.",
 
     "plugins.search": "Rechercher un plugin...",
     "plugins.filter.all": "Tous les plugins",
