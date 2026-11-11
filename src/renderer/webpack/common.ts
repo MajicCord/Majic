@@ -120,6 +120,40 @@ export const UserSettingsActionCreators = {
 
 export const MessageTypeSets = common("MessageTypeSets", () => findSilently(filters.byProps("REPLYABLE", "FORWARDABLE")));
 
+export const ContextMenuApi = mapMangledModuleLazy('type:"CONTEXT_MENU_OPEN', {
+    closeContextMenu: filters.byCode("CONTEXT_MENU_CLOSE"),
+    openContextMenu: filters.byCode("renderLazy:"),
+    openContextMenuLazy: (e: any) => typeof e === "function" && e.toString().length < 100
+});
+
+export const Popout = common("Popout", () => findSilently(filters.componentByCode("ref:this.ref,", "renderPopout:this.renderPopout,")));
+export const Avatar = common("Avatar", () => findSilently(filters.componentByCode(".size-1.375*")));
+
+export const ApplicationAssetUtils = mapMangledModuleLazy("getAssetImage: size must === [", {
+    fetchAssetIds: filters.byCode('.startsWith("http:")', ".dispatch({"),
+    getAssetFromImageURL: filters.byCode("].serialize(", ":null"),
+    getAssetImage: filters.byCode("getAssetImage: size must === ["),
+    getAssets: filters.byCode(".assets")
+});
+
+export const NavigationRouter = mapMangledModuleLazy("transitionTo - Transitioning to", {
+    transitionTo: filters.byCode("transitionTo -"),
+    transitionToGuild: filters.byCode("transitionToGuild -"),
+    back: filters.byCode("goBack()"),
+    forward: filters.byCode("goForward()")
+});
+
+export const ChannelRouter = mapMangledModuleLazy('"Thread must have a parent ID."', {
+    transitionToChannel: filters.byCode(".openTextInVoiceIfVoiceChannel"),
+    transitionToThread: filters.byCode('"Thread must have a parent ID."')
+});
+
+export const SettingsRouter = mapMangledModuleLazy('type:"USER_SETTINGS_MODAL_OPEN"', {
+    openUserSettings: filters.byCode('type:"USER_SETTINGS_MODAL_OPEN"')
+});
+
+export const UsernameUtils = common("UsernameUtils", () => findSilently(filters.byProps("useName", "getGlobalName")));
+
 export const ConfirmModal = findByCodeLazy("actionBarInput:", '"critical"', '"secondary');
 
 export const DraftType = common<Record<string, number>>("DraftType", () => findSilently(filters.byProps("ChannelMessage", "SlashCommand")));

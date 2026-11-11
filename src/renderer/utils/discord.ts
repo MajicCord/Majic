@@ -146,3 +146,15 @@ export async function openUserProfile(id: string) {
         sourceAnalyticsLocations: ["username", "user profile popout"]
     });
 }
+
+export function getCurrentChannel() {
+    return Stores.ChannelStore.getChannel(Stores.SelectedChannelStore.getChannelId());
+}
+
+export function getCurrentGuild() {
+    return Stores.GuildStore.getGuild(getCurrentChannel()?.guild_id);
+}
+
+export function getUniqueUsername(user: { discriminator: string; username: string; tag: string }) {
+    return user.discriminator === "0" ? user.username : user.tag;
+}
