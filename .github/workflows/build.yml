@@ -17,10 +17,9 @@ permissions:
     contents: write
 
 jobs:
-    build:
+    majic:
         if: github.repository == 'MajicCord/Majic'
         runs-on: ubuntu-latest
-
         steps:
             - uses: actions/checkout@v5
 
@@ -43,15 +42,72 @@ jobs:
             - uses: actions/setup-go@v6
               with:
                   go-version-file: installer/go.mod
-                  cache-dependency-path: installer/go.mod
+                  cache-dependency-path: installer/go.sum
 
-            - name: Build the installer
+            - name: Build the console installers
               working-directory: installer
+              env:
+                  CGO_ENABLED: 0
               run: |
-                  go test ./...
-                  GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o ../dist/MajicInstaller.exe .
-                  GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o ../dist/MajicInstaller-linux .
-                  GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../dist/MajicInstaller-macos .
+                  go test -tags cli ./...
+                  GOOS=windows GOARCH=amd64 go build -tags cli -trimpath -ldflags "-s -w" -o ../dist/MajicInstallerCli.exe .
+                  GOOS=linux GOARCH=amd64 go build -tags cli -trimpath -ldflags "-s -w" -o ../dist/MajicInstallerCli-linux .
+                  GOOS=darwin GOARCH=arm64 go build -tags cli -trimpath -ldflags "-s -w" -o ../dist/MajicInstallerCli-macos .
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: majic
+                  path: |
+                      dist/patcher.js
+                      dist/preload.js
+                      dist/renderer.js
+                      dist/MajicInstallerCli.exe
+                      dist/MajicInstallerCli-linux
+                      dist/MajicInstallerCli-macos
+
+    installer-gui:
+        if: github.repository == 'MajicCord/Majic'
+        runs-on: windows-latest
+        defaults:
+            run:
+                shell: msys2 {0}
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: msys2/setup-msys2@v2
+              with:
+                  msystem: UCRT64
+                  install: mingw-w64-ucrt-x86_64-gcc
+                  path-type: inherit
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: installer/go.mod
+                  cache-dependency-path: installer/go.sum
+
+            - name: Build the graphical installer
+              working-directory: installer
+              env:
+                  CGO_ENABLED: 1
+                  CC: gcc
+                  CXX: g++
+              run: go build -trimpath -ldflags '-s -w -H=windowsgui -extldflags "-mcrtdll=ucrt"' -o ../dist/MajicInstaller.exe .
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: installer-gui
+                  path: dist/MajicInstaller.exe
+
+    publish:
+        needs: [majic, installer-gui]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/download-artifact@v5
+              with:
+                  path: dist
+                  merge-multiple: true
 
             - name: Publish the DevBuild release
               run: |
@@ -62,7 +118,7 @@ jobs:
                       gh release create devbuild --title "Majic $HASH" --notes "$NOTES" --latest
                   fi
 
-                  gh release upload devbuild --clobber dist/patcher.js dist/preload.js dist/renderer.js dist/MajicInstaller.exe dist/MajicInstaller-linux dist/MajicInstaller-macos
+                  gh release upload devbuild --clobber dist/*
                   gh release edit devbuild --title "Majic $HASH" --notes "$NOTES" --latest
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
