@@ -114,7 +114,7 @@ func runInteractive(installs []DiscordInstall) {
 func main() {
 	installFlag := flag.Bool("install", false, "install or repair Majic without prompts")
 	uninstallFlag := flag.Bool("uninstall", false, "uninstall Majic without prompts")
-	branch := flag.String("branch", "stable", "Discord branch: stable, ptb or canary")
+	branch := flag.String("branch", "stable", "Discord branch: stable, ptb, canary or development")
 	flag.Parse()
 
 	installs := findInstalls()
