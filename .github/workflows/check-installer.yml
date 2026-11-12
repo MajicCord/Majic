@@ -80,8 +80,11 @@ jobs:
               run: |
                   New-Item -ItemType Directory -Force preview | Out-Null
                   Copy-Item dist/MajicInstaller.exe preview/
-                  $mesa = "${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin\opengl32.dll"
-                  if (Test-Path $mesa) { Copy-Item $mesa preview/ }
+                  # Mesa's opengl32.dll next to the exe, and its own DLLs (libgallium_wgl.dll…) found through PATH
+                  $ucrt = "${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin"
+                  if (Test-Path "$ucrt\opengl32.dll") { Copy-Item "$ucrt\opengl32.dll" preview/ }
+                  $env:PATH = "$ucrt;$env:PATH"
+                  $env:GALLIUM_DRIVER = "llvmpipe"
                   $p = Start-Process preview/MajicInstaller.exe -PassThru
                   Start-Sleep -Seconds 10
                   Add-Type -AssemblyName System.Windows.Forms, System.Drawing
