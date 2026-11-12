@@ -1,0 +1,59 @@
+name: Test Patches
+
+on:
+    workflow_dispatch:
+        inputs:
+            discord_branch:
+                type: choice
+                description: Discord branch to test patches on
+                options:
+                    - both
+                    - stable
+                    - canary
+                default: both
+
+permissions:
+    contents: read
+
+jobs:
+    report:
+        if: github.repository == 'MajicCord/Majic'
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                branch: [stable, canary]
+        steps:
+            - name: Skip unselected branch
+              if: inputs.discord_branch != 'both' && inputs.discord_branch != matrix.branch
+              run: echo "Skipping ${{ matrix.branch }}"
+
+            - uses: actions/checkout@v4
+              if: inputs.discord_branch == 'both' || inputs.discord_branch == matrix.branch
+
+            - uses: pnpm/action-setup@v4
+              if: inputs.discord_branch == 'both' || inputs.discord_branch == matrix.branch
+
+            - uses: actions/setup-node@v4
+              if: inputs.discord_branch == 'both' || inputs.discord_branch == matrix.branch
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - name: Install dependencies
+              if: inputs.discord_branch == 'both' || inputs.discord_branch == matrix.branch
+              run: pnpm install --frozen-lockfile
+
+            - name: Build the reporter
+              if: inputs.discord_branch == 'both' || inputs.discord_branch == matrix.branch
+              run: pnpm buildReporter
+
+            - name: Run the reporter
+              if: inputs.discord_branch == 'both' || inputs.discord_branch == matrix.branch
+              timeout-minutes: 10
+              run: node scripts/generateReport.mjs >> "$GITHUB_STEP_SUMMARY"
+              env:
+                  CHROMIUM_BIN: /usr/bin/google-chrome
+                  USE_CANARY: ${{ matrix.branch == 'canary' }}
+                  WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+                  WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
