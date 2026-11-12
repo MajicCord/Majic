@@ -8,7 +8,7 @@ import { Logger } from "@utils/logger";
 import { settings } from "@api/settings";
 import { enableStyle } from "@api/styles";
 import { initThemes, initThemeStoreListener } from "@api/themes";
-import { runStartupUpdateCheck } from "@api/updater";
+import { startUpdateChecks } from "@api/updater";
 import { initWebpackHook, reportPendingPatches } from "./webpack/patchWebpack";
 import * as Plugins from "./plugins";
 import * as Reporter from "./reporter";
@@ -53,7 +53,7 @@ if (IS_REPORTER) {
         Plugins.startAllPlugins("WebpackReady");
         initThemeStoreListener();
         setTimeout(Webpack.Common.reportCommons, 5_000);
-        setTimeout(runStartupUpdateCheck, 10_000);
+        startUpdateChecks();
     });
 
     if (document.readyState === "loading") {

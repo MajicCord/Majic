@@ -7,6 +7,7 @@ import { downloadSettingsBackup, uploadSettingsBackup } from "@api/settingsBacku
 import * as Updater from "@api/updater";
 import { checkForUpdates, getRepo, update as installUpdate } from "@api/updater";
 import { t, useLocale } from "@i18n";
+import { promptToRestart } from "@utils/promptToRestart";
 import type { ReporterResult } from "@renderer/reporter";
 import { DiscordIcon, React, useEffect, useReducer, useState } from "@webpack/common";
 
@@ -175,6 +176,7 @@ function UpdaterCard({ update }: { update(change: () => void): void }) {
         try {
             await installUpdate();
             setState("installed");
+            promptToRestart("relaunch", { title: t("updater.title"), subtitle: t("updater.updatedPrompt"), confirmText: t("updater.restart") });
         } catch (err) {
             fail(err);
         }

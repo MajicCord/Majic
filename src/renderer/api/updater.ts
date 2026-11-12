@@ -6,6 +6,7 @@ import { showNotification } from "@api/notifications";
 import { settings } from "@api/settings";
 import { t } from "@i18n";
 import { Logger } from "@utils/logger";
+import { SettingsRouter } from "@webpack/common";
 
 export interface UpdateChange {
     hash: string;
@@ -45,7 +46,23 @@ export async function update() {
     return true;
 }
 
-export async function runStartupUpdateCheck() {
+let notifiedThisSession = false;
+
+function notifyOnce(data: Parameters<typeof showNotification>[0]) {
+    if (notifiedThisSession) return;
+    notifiedThisSession = true;
+    setTimeout(() => showNotification({ permanent: true, ...data }), 10_000);
+}
+
+function openMajicSettings() {
+    try {
+        SettingsRouter.openUserSettings("majic_main_panel");
+    } catch {
+        SettingsRouter.openUserSettings();
+    }
+}
+
+export async function runUpdateCheck() {
     if (IS_DEV || IS_REPORTER) return;
 
     try {
@@ -54,22 +71,28 @@ export async function runStartupUpdateCheck() {
         if (settings.autoUpdate) {
             await update();
             if (settings.autoUpdateNotification) {
-                showNotification({
+                notifyOnce({
                     title: t("updater.updatedTitle"),
                     body: t("updater.updatedBody"),
-                    permanent: true,
                     onClick: () => void MajicNative.relaunch()
                 });
             }
             return;
         }
 
-        showNotification({
+        notifyOnce({
             title: t("updater.availableTitle"),
             body: t("updater.availableBody"),
-            permanent: true
+            onClick: openMajicSettings
         });
     } catch (err) {
         logger.error("Update check failed", err);
+    }
+}
+
+export function startUpdateChecks() {
+    void runUpdateCheck();
+    if (settings.autoUpdate && !settings.autoUpdateNotification) {
+        setInterval(runUpdateCheck, 30 * 60_000);
     }
 }
