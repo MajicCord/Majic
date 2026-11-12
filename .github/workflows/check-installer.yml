@@ -1,0 +1,100 @@
+name: Check installer
+
+# Builds and tests the installers on pull requests, without publishing anything.
+# The graphical installer, a screenshot of its window and the CLI builds are attached to the run as artifacts.
+
+on:
+    pull_request:
+        paths:
+            - .github/workflows/check-installer.yml
+            - installer/**
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    cli:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: installer/go.mod
+                  cache-dependency-path: installer/go.sum
+
+            - name: Test and build the console installers
+              working-directory: installer
+              env:
+                  CGO_ENABLED: 0
+              run: |
+                  go test -tags cli ./...
+                  GOOS=windows GOARCH=amd64 go build -tags cli -trimpath -ldflags "-s -w" -o ../dist/MajicInstallerCli.exe .
+                  GOOS=linux GOARCH=amd64 go build -tags cli -trimpath -ldflags "-s -w" -o ../dist/MajicInstallerCli-linux .
+                  GOOS=darwin GOARCH=arm64 go build -tags cli -trimpath -ldflags "-s -w" -o ../dist/MajicInstallerCli-macos .
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: installer-cli
+                  path: dist/
+
+    gui:
+        runs-on: windows-latest
+        defaults:
+            run:
+                shell: msys2 {0}
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: msys2/setup-msys2@v2
+              id: msys2
+              with:
+                  msystem: UCRT64
+                  # mesa: software OpenGL, so the window can open on a runner without a GPU (screenshot only)
+                  install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-mesa
+                  path-type: inherit
+
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: installer/go.mod
+                  cache-dependency-path: installer/go.sum
+
+            - name: Build the graphical installer
+              working-directory: installer
+              env:
+                  CGO_ENABLED: 1
+                  CC: gcc
+                  CXX: g++
+              run: go build -trimpath -ldflags '-s -w -H=windowsgui -extldflags "-mcrtdll=ucrt"' -o ../dist/MajicInstaller.exe .
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: installer-gui
+                  path: dist/MajicInstaller.exe
+
+            # Best effort: a failed screenshot does not fail the check
+            - name: Screenshot the window
+              continue-on-error: true
+              shell: pwsh
+              run: |
+                  New-Item -ItemType Directory -Force preview | Out-Null
+                  Copy-Item dist/MajicInstaller.exe preview/
+                  $mesa = "${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin\opengl32.dll"
+                  if (Test-Path $mesa) { Copy-Item $mesa preview/ }
+                  $p = Start-Process preview/MajicInstaller.exe -PassThru
+                  Start-Sleep -Seconds 10
+                  Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+                  $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+                  $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+                  $gfx = [System.Drawing.Graphics]::FromImage($bmp)
+                  $gfx.CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+                  $bmp.Save("$PWD/installer-screenshot.png")
+                  if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force } else { Write-Warning "The installer exited with code $($p.ExitCode)" }
+
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: installer-screenshot
+                  path: installer-screenshot.png
+                  if-no-files-found: ignore
