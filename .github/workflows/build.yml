@@ -8,6 +8,7 @@ on:
             - .github/workflows/build.yml
             - src/**
             - scripts/build.mjs
+            - installer/**
             - package.json
             - pnpm-lock.yaml
     workflow_dispatch:
@@ -21,11 +22,11 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: pnpm/action-setup@v4
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v5
               with:
                   node-version: 22
                   cache: pnpm
@@ -39,6 +40,19 @@ jobs:
             - name: Build
               run: pnpm build
 
+            - uses: actions/setup-go@v6
+              with:
+                  go-version-file: installer/go.mod
+                  cache-dependency-path: installer/go.mod
+
+            - name: Build the installer
+              working-directory: installer
+              run: |
+                  go test ./...
+                  GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o ../dist/MajicInstaller.exe .
+                  GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o ../dist/MajicInstaller-linux .
+                  GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o ../dist/MajicInstaller-macos .
+
             - name: Publish the DevBuild release
               run: |
                   HASH=$(git rev-parse --short HEAD)
@@ -48,7 +62,7 @@ jobs:
                       gh release create devbuild --title "Majic $HASH" --notes "$NOTES" --latest
                   fi
 
-                  gh release upload devbuild --clobber dist/patcher.js dist/preload.js dist/renderer.js
+                  gh release upload devbuild --clobber dist/patcher.js dist/preload.js dist/renderer.js dist/MajicInstaller.exe dist/MajicInstaller-linux dist/MajicInstaller-macos
                   gh release edit devbuild --title "Majic $HASH" --notes "$NOTES" --latest
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
