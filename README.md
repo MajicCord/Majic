@@ -1,4 +1,4 @@
-# ✨ Majic
+# Majic
 
 ![](https://img.shields.io/badge/license-GPL--3.0-7c3aed?style=for-the-badge)
 ![](https://img.shields.io/badge/status-early%20development-ec4899?style=for-the-badge)
