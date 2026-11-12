@@ -186,7 +186,7 @@ export function MajicTab() {
 
             <WindowSettings update={update} />
 
-            <ReporterCard />
+            {IS_DEV && <ReporterCard />}
 
             <Card>
                 <SubHeading>{t("majic.data")}</SubHeading>

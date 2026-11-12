@@ -10,6 +10,7 @@ const ROOT = resolve(import.meta.dirname, "..");
 const PLUGINS_DIR = join(ROOT, "src", "plugins");
 const watch = process.argv.includes("--watch");
 const dev = watch || process.argv.includes("--dev");
+const reporter = process.argv.includes("--reporter");
 
 const pluginsGlob = {
     name: "majic-plugins",
@@ -94,10 +95,25 @@ const common = {
     target: "es2022",
     logLevel: "info",
     tsconfig: join(ROOT, "tsconfig.json"),
-    legalComments: "none"
+    legalComments: "none",
+    define: {
+        IS_DEV: JSON.stringify(dev),
+        IS_REPORTER: JSON.stringify(reporter)
+    }
 };
 
-const configs = [
+const rendererConfig = {
+    ...common,
+    entryPoints: [join(ROOT, "src/renderer/index.ts")],
+    platform: "browser",
+    format: "iife",
+    globalName: "Majic",
+    plugins: [pluginsGlob, fileUris]
+};
+
+const configs = reporter ? [
+    { ...rendererConfig, outfile: join(ROOT, "dist/reporter.js"), minify: false }
+] : [
     {
         ...common,
         entryPoints: [join(ROOT, "src/main/index.ts")],
@@ -115,15 +131,7 @@ const configs = [
         format: "cjs",
         external: ["electron", "original-fs"]
     },
-    {
-        ...common,
-        entryPoints: [join(ROOT, "src/renderer/index.ts")],
-        outfile: join(ROOT, "dist/renderer.js"),
-        platform: "browser",
-        format: "iife",
-        globalName: "Majic",
-        plugins: [pluginsGlob, fileUris]
-    }
+    { ...rendererConfig, outfile: join(ROOT, "dist/renderer.js") }
 ];
 
 if (watch) {

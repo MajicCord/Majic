@@ -39,7 +39,7 @@ saveSettings();
 const enabledAsDependency = new Set<string>();
 
 function isEnabledByUser(p: Plugin) {
-    return p.required || getPluginSettings(p.name, p.enabledByDefault ?? false).enabled;
+    return IS_REPORTER || p.required || getPluginSettings(p.name, p.enabledByDefault ?? false).enabled;
 }
 
 export function isPluginEnabled(name: string) {
@@ -76,14 +76,15 @@ export function registerPatches() {
     for (const p of Object.values(plugins)) {
         if (!isPluginEnabled(p.name) || !p.patches) continue;
         for (const patch of p.patches) {
-            if (patch.predicate && !patch.predicate()) continue;
+            if (!IS_REPORTER && patch.predicate && !patch.predicate()) continue;
 
             const replacements = (Array.isArray(patch.replacement) ? patch.replacement : [patch.replacement])
-                .filter(r => !r.predicate || r.predicate());
+                .filter(r => IS_REPORTER || !r.predicate || r.predicate());
             if (!replacements.length) continue;
 
             patches.push({
                 ...patch,
+                group: IS_REPORTER ? false : patch.group,
                 plugin: p.name,
                 find: canonicalizeMatch(patch.find),
                 replacement: replacements.map(r => canonicalizeReplacement(r, p.name))

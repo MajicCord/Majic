@@ -6,6 +6,8 @@
   "license": "GPL-3.0-or-later",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "buildReporter": "node scripts/build.mjs --reporter",
+    "report": "node scripts/generateReport.mjs",
     "watch": "node scripts/build.mjs --watch",
     "inject": "node scripts/inject.mjs",
     "uninject": "node scripts/inject.mjs --uninject",
@@ -17,6 +19,7 @@
     "@types/react": "^18.3.31",
     "electron": "^33.2.0",
     "esbuild": "^0.24.0",
+    "puppeteer-core": "^25.17.0",
     "typescript": "^5.7.2"
   },
   "packageManager": "pnpm@11.4.0",

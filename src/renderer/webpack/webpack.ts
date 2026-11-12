@@ -44,7 +44,7 @@ export interface LazySearch {
 export const lazyWebpackSearchHistory: LazySearch[] = [];
 
 function recordSearch(method: string, args: unknown[], test: () => unknown) {
-    lazyWebpackSearchHistory.push({ method, args, test });
+    if (IS_REPORTER || IS_DEV) lazyWebpackSearchHistory.push({ method, args, test });
 }
 export const moduleListeners = new Set<CallbackFn>();
 

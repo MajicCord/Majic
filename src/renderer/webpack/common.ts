@@ -14,7 +14,7 @@ const registry = new Map<string, () => unknown>();
 
 function common<T = any>(name: string, resolve: () => T): T {
     registry.set(name, resolve);
-    lazyWebpackSearchHistory.push({ method: "common", args: [name], test: resolve });
+    if (IS_REPORTER || IS_DEV) lazyWebpackSearchHistory.push({ method: "common", args: [name], test: resolve });
     return proxyLazy(resolve);
 }
 

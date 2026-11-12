@@ -10,6 +10,8 @@ declare global {
         Majic: typeof import("./index");
     }
     const MajicNative: MajicNativeApi;
+    const IS_DEV: boolean;
+    const IS_REPORTER: boolean;
     const Majic: typeof import("./index");
 }
 
