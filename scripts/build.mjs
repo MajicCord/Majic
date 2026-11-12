@@ -3,6 +3,7 @@
  */
 
 import { context, build, transform } from "esbuild";
+import { execSync } from "node:child_process";
 import { readdirSync, existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -11,6 +12,19 @@ const PLUGINS_DIR = join(ROOT, "src", "plugins");
 const watch = process.argv.includes("--watch");
 const dev = watch || process.argv.includes("--dev");
 const reporter = process.argv.includes("--reporter");
+
+function git(args, fallback) {
+    try {
+        return execSync(`git ${args}`, { cwd: ROOT, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    } catch {
+        return fallback;
+    }
+}
+
+const gitHash = process.env.MAJIC_HASH || git("rev-parse --short HEAD", "unknown");
+const gitRemote = (process.env.MAJIC_REMOTE || git("remote get-url origin", "MajicCord/Majic"))
+    .replace(/^.*github\.com[:/]/, "")
+    .replace(/\.git$/, "");
 
 const pluginsGlob = {
     name: "majic-plugins",
@@ -98,7 +112,9 @@ const common = {
     legalComments: "none",
     define: {
         IS_DEV: JSON.stringify(dev),
-        IS_REPORTER: JSON.stringify(reporter)
+        IS_REPORTER: JSON.stringify(reporter),
+        MAJIC_GIT_HASH: JSON.stringify(gitHash),
+        MAJIC_GIT_REMOTE: JSON.stringify(gitRemote)
     }
 };
 

@@ -7,6 +7,7 @@ import { onceDefined } from "@shared/onceDefined";
 import { initPluginNatives } from "./ipcPlugins";
 import { DATA_DIR, QUICK_CSS_FILE, RendererSettings } from "./settings";
 import { initThemes } from "./themes";
+import { initUpdater } from "./updater";
 import { persistAfterUpdates } from "./persistAfterUpdates";
 import electron, { app, ipcMain, Menu, session, shell, type BrowserWindowConstructorOptions } from "electron";
 import { release } from "node:os";
@@ -40,6 +41,7 @@ function initMajic() {
     persistAfterUpdates();
     initPluginNatives();
     initThemes();
+    initUpdater();
 
     mkdirSync(DATA_DIR, { recursive: true });
 

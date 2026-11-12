@@ -21,5 +21,9 @@ export const enum IpcEvents {
     QUICK_CSS_UPDATE = "MajicQuickCssUpdate",
     THEME_UPDATE = "MajicThemeUpdate",
     SUPPORTS_WINDOWS_MATERIAL = "MajicSupportsWindowsMaterial",
-    RELAUNCH = "MajicRelaunch"
+    RELAUNCH = "MajicRelaunch",
+    GET_REPO = "MajicGetRepo",
+    GET_UPDATES = "MajicGetUpdates",
+    UPDATE = "MajicUpdate",
+    BUILD = "MajicBuild"
 }

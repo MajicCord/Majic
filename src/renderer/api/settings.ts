@@ -14,6 +14,8 @@ export interface Settings {
     plugins: Record<string, PluginSettings>;
     useQuickCss: boolean;
     enabledThemes: string[];
+    autoUpdate: boolean;
+    autoUpdateNotification: boolean;
     nativeTitleBar: boolean;
     transparent: boolean;
     disableMinSize: boolean;
@@ -31,6 +33,8 @@ const DEFAULTS: Settings = {
     plugins: {},
     useQuickCss: true,
     enabledThemes: [],
+    autoUpdate: true,
+    autoUpdateNotification: true,
     nativeTitleBar: false,
     transparent: false,
     disableMinSize: false,

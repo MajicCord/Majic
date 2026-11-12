@@ -4,9 +4,11 @@
 
 import { saveSettings, settings, type Settings } from "@api/settings";
 import { downloadSettingsBackup, uploadSettingsBackup } from "@api/settingsBackup";
+import * as Updater from "@api/updater";
+import { checkForUpdates, getRepo, update as installUpdate } from "@api/updater";
 import { t, useLocale } from "@i18n";
 import type { ReporterResult } from "@renderer/reporter";
-import { DiscordIcon, React, useReducer, useState } from "@webpack/common";
+import { DiscordIcon, React, useEffect, useReducer, useState } from "@webpack/common";
 
 import { Button, Card, Heading, Page, Select, Slider, SubHeading, Switch, Text } from "../ui";
 
@@ -142,6 +144,81 @@ function ReporterCard() {
     );
 }
 
+type UpdateState = "idle" | "checking" | "upToDate" | "newer" | "available" | "installing" | "installed" | "error";
+
+function UpdaterCard({ update }: { update(change: () => void): void }) {
+    const [state, setState] = useState<UpdateState>("idle");
+    const [error, setError] = useState("");
+    const [repo, setRepo] = useState("");
+
+    useEffect(() => {
+        void getRepo().then(setRepo).catch(() => { });
+    }, []);
+
+    const fail = (err: unknown) => {
+        setError(err instanceof Error ? err.message : String(err));
+        setState("error");
+    };
+
+    const check = async () => {
+        setState("checking");
+        try {
+            const outdated = await checkForUpdates();
+            setState(outdated ? "available" : Updater.isNewer ? "newer" : "upToDate");
+        } catch (err) {
+            fail(err);
+        }
+    };
+
+    const install = async () => {
+        setState("installing");
+        try {
+            await installUpdate();
+            setState("installed");
+        } catch (err) {
+            fail(err);
+        }
+    };
+
+    return (
+        <Card>
+            <SubHeading>{t("updater.title")}</SubHeading>
+
+            <SwitchRow label={t("updater.autoUpdate")} checked={settings.autoUpdate} onChange={value => update(() => settings.autoUpdate = value)} />
+            <SwitchRow label={t("updater.autoUpdateNotification")} checked={settings.autoUpdateNotification} onChange={value => update(() => settings.autoUpdateNotification = value)} />
+
+            <Text muted>
+                {t("updater.build", { hash: MAJIC_GIT_HASH })}
+                {repo && <> · <a href={repo} target="_blank" rel="noreferrer">{repo.replace(/^https:\/\//, "")}</a></>}
+            </Text>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "10px 0" }}>
+                <Button onClick={() => void check()} disabled={state === "checking" || state === "installing"}>
+                    {state === "checking" ? t("updater.checking") : t("updater.check")}
+                </Button>
+                {state === "available" && (
+                    <Button variant="secondary" onClick={() => void install()}>{t("updater.install")}</Button>
+                )}
+                {state === "installed" && (
+                    <Button variant="secondary" onClick={() => void MajicNative.relaunch()}>{t("updater.restart")}</Button>
+                )}
+            </div>
+
+            {state === "upToDate" && <Text>{t("updater.upToDate")}</Text>}
+            {state === "newer" && <Text>{t("updater.newer")}</Text>}
+            {state === "installing" && <Text muted>{t("updater.installing")}</Text>}
+            {state === "installed" && <Text>{t("updater.installed")}</Text>}
+            {state === "error" && <Text>{t("updater.error", { error })}</Text>}
+            {state === "available" && (
+                <>
+                    <Text>{t("updater.available", { count: Updater.changes.length })}</Text>
+                    <pre className="majic-reporter-list">{Updater.changes.map(change => `${change.hash} ${change.message} (${change.author})`).join("\n")}</pre>
+                </>
+            )}
+        </Card>
+    );
+}
+
 export function MajicTab() {
     useLocale();
     const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -183,6 +260,8 @@ export function MajicTab() {
                     onChange={value => update(() => settings.notifications.timeout = value * 1000)}
                 />
             </Card>
+
+            {!IS_DEV && <UpdaterCard update={update} />}
 
             <WindowSettings update={update} />
 

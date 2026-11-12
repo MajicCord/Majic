@@ -5,6 +5,8 @@
 import { IpcEvents } from "@shared/IpcEvents";
 import { contextBridge, ipcRenderer, webFrame } from "electron";
 
+type UpdaterResult<T> = { ok: true; value: T } | { ok: false; error: string };
+
 const pluginHelpers: Record<string, Record<string, (...args: any[]) => Promise<any>>> = {};
 const pluginIpcMap: Record<string, Record<string, string>> = ipcRenderer.sendSync(IpcEvents.GET_PLUGIN_IPC_METHOD_MAP) ?? {};
 
@@ -21,6 +23,12 @@ const MajicNative = {
     relaunch: (): Promise<void> => ipcRenderer.invoke(IpcEvents.RELAUNCH),
     supportsWindowsMaterial: (): boolean => ipcRenderer.sendSync(IpcEvents.SUPPORTS_WINDOWS_MATERIAL),
     platform: process.platform,
+    updater: {
+        getRepo: (): Promise<UpdaterResult<string>> => ipcRenderer.invoke(IpcEvents.GET_REPO),
+        getUpdates: (): Promise<UpdaterResult<Array<{ hash: string; author: string; message: string }>>> => ipcRenderer.invoke(IpcEvents.GET_UPDATES),
+        update: (): Promise<UpdaterResult<boolean>> => ipcRenderer.invoke(IpcEvents.UPDATE),
+        rebuild: (): Promise<UpdaterResult<boolean>> => ipcRenderer.invoke(IpcEvents.BUILD)
+    },
     openSettingsFolder: (): Promise<void> => ipcRenderer.invoke(IpcEvents.OPEN_SETTINGS_FOLDER),
     themes: {
         getThemesList: (): Promise<Array<Record<string, string | undefined> & { fileName: string; name: string; author: string; description: string }>> => ipcRenderer.invoke(IpcEvents.GET_THEMES_LIST),

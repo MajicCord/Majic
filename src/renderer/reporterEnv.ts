@@ -22,6 +22,12 @@ if (IS_REPORTER && typeof (globalThis as any).MajicNative === "undefined") {
         supportsWindowsMaterial: () => false,
         platform: "linux",
         openSettingsFolder: resolved(undefined),
+        updater: {
+            getRepo: resolved({ ok: true, value: "" }),
+            getUpdates: resolved({ ok: true, value: [] }),
+            update: resolved({ ok: true, value: false }),
+            rebuild: resolved({ ok: true, value: false })
+        },
         themes: {
             getThemesList: resolved([]),
             getThemeData: resolved(undefined),
