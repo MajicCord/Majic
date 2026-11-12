@@ -1,0 +1,54 @@
+name: Build DevBuild
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - .github/workflows/build.yml
+            - src/**
+            - scripts/build.mjs
+            - package.json
+            - pnpm-lock.yaml
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    build:
+        if: github.repository == 'MajicCord/Majic'
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Typecheck
+              run: pnpm typecheck
+
+            - name: Build
+              run: pnpm build
+
+            - name: Publish the DevBuild release
+              run: |
+                  HASH=$(git rev-parse --short HEAD)
+                  NOTES="Latest build of Majic from commit ${GITHUB_SHA}. Updated automatically on every push to main."
+
+                  if ! gh release view devbuild > /dev/null 2>&1; then
+                      gh release create devbuild --title "Majic $HASH" --notes "$NOTES" --latest
+                  fi
+
+                  gh release upload devbuild --clobber dist/patcher.js dist/preload.js dist/renderer.js
+                  gh release edit devbuild --title "Majic $HASH" --notes "$NOTES" --latest
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
