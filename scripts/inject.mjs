@@ -13,7 +13,8 @@ const PATCHER = join(ROOT, "dist", "patcher.js");
 const BRANCHES = {
     stable: { dir: "Discord", name: "discord" },
     ptb: { dir: "DiscordPTB", name: "discordptb" },
-    canary: { dir: "DiscordCanary", name: "discordcanary" }
+    canary: { dir: "DiscordCanary", name: "discordcanary" },
+    development: { dir: "DiscordDevelopment", name: "discorddevelopment" }
 };
 
 const args = process.argv.slice(2);
@@ -22,7 +23,7 @@ const branchKey = args.find(a => !a.startsWith("--")) ?? "stable";
 const branch = BRANCHES[branchKey];
 
 if (process.platform !== "win32") fail("Only Windows is supported for now.");
-if (!branch) fail(`Unknown branch: ${branchKey} (stable, ptb, canary)`);
+if (!branch) fail(`Unknown branch: ${branchKey} (stable, ptb, canary, development)`);
 
 const base = join(process.env.LOCALAPPDATA ?? "", branch.dir);
 if (!existsSync(base)) fail(`Discord ${branchKey} not found in ${base}`);

@@ -44,12 +44,14 @@ func branches() []Branch {
 			{"stable", "Discord", "discord", "Discord.exe", []string{filepath.Join(local, "Discord")}},
 			{"ptb", "Discord PTB", "discordptb", "DiscordPTB.exe", []string{filepath.Join(local, "DiscordPTB")}},
 			{"canary", "Discord Canary", "discordcanary", "DiscordCanary.exe", []string{filepath.Join(local, "DiscordCanary")}},
+			{"development", "Discord Development", "discorddevelopment", "DiscordDevelopment.exe", []string{filepath.Join(local, "DiscordDevelopment")}},
 		}
 	case "darwin":
 		return []Branch{
 			{"stable", "Discord", "discord", "Discord", []string{"/Applications/Discord.app/Contents/Resources"}},
 			{"ptb", "Discord PTB", "discordptb", "Discord PTB", []string{"/Applications/Discord PTB.app/Contents/Resources"}},
 			{"canary", "Discord Canary", "discordcanary", "Discord Canary", []string{"/Applications/Discord Canary.app/Contents/Resources"}},
+			{"development", "Discord Development", "discorddevelopment", "Discord Development", []string{"/Applications/Discord Development.app/Contents/Resources"}},
 		}
 	default:
 		linux := func(name string) []string {
@@ -64,6 +66,7 @@ func branches() []Branch {
 			{"stable", "Discord", "discord", "Discord", linux("discord")},
 			{"ptb", "Discord PTB", "discordptb", "DiscordPTB", linux("discord-ptb")},
 			{"canary", "Discord Canary", "discordcanary", "DiscordCanary", linux("discord-canary")},
+			{"development", "Discord Development", "discorddevelopment", "DiscordDevelopment", linux("discord-development")},
 		}
 	}
 }

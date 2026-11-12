@@ -11,7 +11,7 @@ A little bit of magic for your Discord client
 -   Privacy friendly: blocks Discord analytics, metrics & crash reporting out of the box and has no telemetry
 -   Custom CSS: style Discord the way you like
 -   DevTools unlocked, even on Stable
--   Works on Stable, PTB and Canary
+-   Works on Stable, PTB, Canary and Development
 
 ## Installing / Uninstalling
 
