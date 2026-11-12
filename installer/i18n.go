@@ -11,6 +11,13 @@ import (
 
 var strings_ = map[string]map[string]string{
 	"en": {
+		"downloadTo":      "Files will be downloaded to:",
+		"selectDiscord":   "Choose a Discord install:",
+		"install":         "Install",
+		"repair":          "Repair",
+		"uninstall":       "Uninstall",
+		"openFolder":      "Open Majic folder",
+		"working":         "Working...",
 		"title":           "Majic Installer",
 		"noDiscord":       "No Discord install was found.",
 		"found":           "Discord installs found:",
@@ -38,6 +45,13 @@ var strings_ = map[string]map[string]string{
 		"errMissingAsset": "the latest release has no %s file",
 	},
 	"fr": {
+		"downloadTo":      "Les fichiers seront téléchargés dans :",
+		"selectDiscord":   "Choisis une installation de Discord :",
+		"install":         "Installer",
+		"repair":          "Réparer",
+		"uninstall":       "Désinstaller",
+		"openFolder":      "Ouvrir le dossier Majic",
+		"working":         "En cours...",
 		"title":           "Installeur Majic",
 		"noDiscord":       "Aucune installation de Discord n'a été trouvée.",
 		"found":           "Installations de Discord trouvées :",

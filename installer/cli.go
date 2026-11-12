@@ -1,5 +1,7 @@
+//go:build cli
+
 /*
- * Majic — installer entry point
+ * Majic — command line installer
  */
 
 package main
@@ -9,7 +11,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -22,35 +23,8 @@ func prompt(text string) string {
 	return strings.TrimSpace(line)
 }
 
-func install(target DiscordInstall) error {
-	fmt.Println(tr("downloading"))
-	name, err := downloadMajic()
-	if err != nil {
-		return err
-	}
-	fmt.Printf(tr("downloaded")+"\n", name)
-
-	fmt.Printf(tr("closing")+"\n", target.Branch.Name)
-	target.Close()
-
-	fmt.Printf(tr("injecting")+"\n", target.Branch.Name)
-	if err := target.Inject(filepath.Join(distDir(), "patcher.js")); err != nil {
-		return err
-	}
-
-	fmt.Printf(tr("done")+"\n", target.Branch.Name)
-	return nil
-}
-
-func uninstall(target DiscordInstall) error {
-	fmt.Printf(tr("closing")+"\n", target.Branch.Name)
-	target.Close()
-
-	if err := target.Uninject(); err != nil {
-		return err
-	}
-	fmt.Printf(tr("uninstalled")+"\n", target.Branch.Name)
-	return nil
+func printLine(message string) {
+	fmt.Println(message)
 }
 
 func findBranch(installs []DiscordInstall, key string) (DiscordInstall, bool) {
@@ -69,11 +43,11 @@ func runCli(installs []DiscordInstall, branch string, remove bool) int {
 		return 1
 	}
 
-	action := install
+	action := installMajic
 	if remove {
-		action = uninstall
+		action = uninstallMajic
 	}
-	if err := action(target); err != nil {
+	if err := action(target, printLine); err != nil {
 		fmt.Printf(tr("failed")+"\n", err)
 		return 1
 	}
@@ -122,9 +96,9 @@ func runInteractive(installs []DiscordInstall) {
 	var actionErr error
 	switch prompt(tr("choice")) {
 	case "1":
-		actionErr = install(target)
+		actionErr = installMajic(target, printLine)
 	case "2":
-		actionErr = uninstall(target)
+		actionErr = uninstallMajic(target, printLine)
 	case "3":
 		return
 	default:
