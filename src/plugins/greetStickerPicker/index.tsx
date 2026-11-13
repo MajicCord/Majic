@@ -6,7 +6,7 @@ import { Menu } from "@api/contextMenu";
 import { definePluginSettings } from "@api/settings";
 import { createStrings } from "@i18n";
 import { definePlugin, OptionType } from "@utils/types";
-import { filters, findComponentByCodeLazy, mapMangledModuleLazy } from "@webpack";
+import { findComponentByCodeLazy } from "@webpack";
 import { ContextMenuApi, FluxDispatcher, MessageActions, React } from "@webpack/common";
 
 const s = createStrings({
@@ -79,7 +79,7 @@ function greet(channel: any, message: any, stickers: string[]) {
 }
 
 function GreetMenu({ channel, message }: { channel: any; message: any }) {
-    const store = settings.use(["greetMode"]) as unknown as PrivateSettings;
+    const store = settings.use(["greetMode", "multiGreetChoices" as "greetMode"]) as unknown as PrivateSettings;
     const { greetMode, multiGreetChoices = [] } = store;
 
     return (
