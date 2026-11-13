@@ -17,10 +17,9 @@ type WindowSwitch = "nativeTitleBar" | "transparent" | "disableMinSize" | "winCt
 
 const VIBRANCY_STYLES = ["under-page", "content", "window", "selection", "titlebar", "header", "sidebar", "tooltip", "menu", "popover", "fullscreen-ui", "hud"];
 
-export function SwitchRow({ label, hint, icon, checked, onChange }: { label: string; hint?: string; icon?: string; checked: boolean; onChange(value: boolean): void }) {
+function SwitchRow({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange(value: boolean): void }) {
     return (
         <div className="majic-row" style={{ marginBottom: 12 }}>
-            {icon && <img src={icon} alt="" width={24} height={24} style={{ marginRight: 10, flexShrink: 0 }} />}
             <div className="majic-row-grow">
                 <Text>{label}</Text>
                 {hint && <Text muted>{hint}</Text>}

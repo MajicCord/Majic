@@ -38,6 +38,8 @@ const fr: Dictionary = {
     "badges.hint": "Choisis quels badges Majic s'affichent sur les profils. Ça ne change que ce que tu vois.",
     "badges.developer": "Développeur Majic",
     "badges.supporter": "Soutien de Majic",
+    "badges.developerDescription": "Affiché sur le profil des personnes qui développent Majic",
+    "badges.supporterDescription": "Affiché sur le profil des personnes qui soutiennent Majic",
     "majic.openSettingsFolder": "Ouvrir le dossier des réglages",
     "majic.export": "Exporter les réglages",
     "majic.import": "Importer des réglages",

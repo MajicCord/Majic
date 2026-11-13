@@ -7,40 +7,48 @@ import { t, useLocale } from "@i18n";
 import { DEVELOPER_BADGE_ICON, SUPPORTER_BADGE_ICON } from "@utils/constants";
 import { React, useReducer } from "@webpack/common";
 
-import { Card, Heading, Page, Text } from "../ui";
-import { SwitchRow } from "./MajicTab";
+import { Card, Heading, Page, Switch, Text } from "../ui";
 
-const BADGES: Array<{ key: keyof Settings["badges"]; icon: string }> = [
+type BadgeKey = keyof Settings["badges"];
+
+const BADGES: Array<{ key: BadgeKey; icon: string }> = [
     { key: "developer", icon: DEVELOPER_BADGE_ICON },
     { key: "supporter", icon: SUPPORTER_BADGE_ICON }
 ];
 
-export function BadgesTab() {
-    useLocale();
+function BadgeCard({ badge, icon }: { badge: BadgeKey; icon: string }) {
     const [, rerender] = useReducer((n: number) => n + 1, 0);
+    const name = t(`badges.${badge}`);
 
-    const toggle = (key: keyof Settings["badges"], value: boolean) => {
-        settings.badges[key] = value;
+    const toggle = (value: boolean) => {
+        settings.badges[badge] = value;
         saveSettings();
         rerender();
     };
+
+    return (
+        <Card>
+            <div className="majic-row">
+                <img src={icon} alt="" width={32} height={32} style={{ marginRight: 12, flexShrink: 0 }} />
+                <div className="majic-row-grow">
+                    <Text><strong>{name}</strong></Text>
+                    <Text muted>{t(`badges.${badge}Description`)}</Text>
+                </div>
+                <Switch checked={settings.badges[badge]} onChange={toggle} label={name} />
+            </div>
+        </Card>
+    );
+}
+
+export function BadgesTab() {
+    useLocale();
 
     return (
         <Page>
             <Heading>{t("settings.badges")}</Heading>
             <Text muted>{t("badges.hint")}</Text>
 
-            <Card>
-                {BADGES.map(({ key, icon }) => (
-                    <SwitchRow
-                        key={key}
-                        icon={icon}
-                        label={t(`badges.${key}`)}
-                        checked={settings.badges[key]}
-                        onChange={value => toggle(key, value)}
-                    />
-                ))}
-            </Card>
+            {BADGES.map(({ key, icon }) => <BadgeCard key={key} badge={key} icon={icon} />)}
         </Page>
     );
 }

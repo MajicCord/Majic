@@ -36,6 +36,8 @@ export default {
     "badges.hint": "Choose which Majic badges are shown on profiles. This only changes what you see.",
     "badges.developer": "Majic Developer",
     "badges.supporter": "Majic Supporter",
+    "badges.developerDescription": "Shown on the profiles of the people who build Majic",
+    "badges.supporterDescription": "Shown on the profiles of the people who support Majic",
     "majic.openSettingsFolder": "Open settings folder",
     "majic.export": "Export settings",
     "majic.import": "Import settings",
