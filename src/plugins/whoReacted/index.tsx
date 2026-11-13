@@ -3,10 +3,13 @@
  */
 
 import { definePluginSettings } from "@api/settings";
+import { isPluginEnabled } from "@renderer/plugins";
 import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { Queue, sleep, useForceUpdater } from "@utils/misc";
 import { definePlugin, OptionType } from "@utils/types";
 import { Endpoints, FluxDispatcher, React, RestAPI, Stores, useEffect, useLayoutEffect, UserSummaryItem } from "@webpack/common";
+
+import NoBlockedMessages from "../noBlockedMessages";
 
 interface ReactionEmoji {
     id?: string;
@@ -113,7 +116,11 @@ function Reactors({ message, emoji, type }: ReactionProps) {
     if (message.reactions.length > 10) return null;
 
     const reactionMap = getReactionsWithQueue(message, emoji, type);
-    const users = Array.from(reactionMap, ([id]) => Stores.UserStore.getUser(id)).filter(Boolean);
+    let users = Array.from(reactionMap, ([id]) => Stores.UserStore.getUser(id)).filter(Boolean);
+
+    if (isPluginEnabled(NoBlockedMessages.name)) {
+        users = users.filter(user => !NoBlockedMessages.shouldIgnoreUser(user.id));
+    }
 
     return users.length === 0 ? null : <ReactionUsers message={message} users={users} />;
 }
