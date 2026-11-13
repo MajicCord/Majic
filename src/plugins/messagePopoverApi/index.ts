@@ -4,6 +4,8 @@
 
 import { _renderPopoverButtons } from "@api/messagePopover";
 import { definePlugin } from "@utils/types";
+import { Stores } from "@webpack/common";
+import type { ComponentType } from "react";
 
 export default definePlugin({
     name: "MessagePopoverAPI",
@@ -20,11 +22,15 @@ export default definePlugin({
         {
             find: "#{intl::MESSAGE_UTILITIES_A11Y_LABEL}),children",
             replacement: {
-                match: /(?<=\{channel:(\i),message:(\i),canCopy:[^]+?)return\(0,(\i)\.jsxs\)\(\3\.Fragment,\{children:\[(?=[^]{0,120}?\(0,\3\.jsx\)\((\i\.\i),\{label:)/,
-                replace: "$&$self.renderButtons({channel:$1,message:$2},$4),"
+                match: /(?<=\]\}\)),(.{0,40}togglePopout:.+?\}\))\]\}\):null,(?<=\((\i\.\i|\i),\{label:.+?:null,(\i)\?\(0,\i\.jsxs?\)\(\i\.Fragment.+?message:(\i).+?)/,
+                replace: (_: string, reactButton: string, buttonComponent: string, showReactButton: string, message: string) =>
+                    `]}):null,$self.renderButtons(${buttonComponent},${message}),${showReactButton}?${reactButton}:null,`
             }
         }
     ],
 
-    renderButtons: _renderPopoverButtons
+    renderButtons(ButtonComponent: ComponentType<any>, message: any) {
+        const channel = message ? Stores.ChannelStore.getChannel(message.channel_id) : null;
+        return _renderPopoverButtons({ message, channel }, ButtonComponent);
+    }
 });
