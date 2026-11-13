@@ -4,7 +4,6 @@
 
 import { DataStore } from "@api/dataStore";
 import { definePlugin } from "@utils/types";
-import { filters, mapMangledModuleLazy } from "@webpack";
 import { ChannelRouter, NavigationRouter, Stores } from "@webpack/common";
 
 interface PreviousChannel {
