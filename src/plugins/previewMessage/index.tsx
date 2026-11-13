@@ -3,30 +3,19 @@
  */
 
 import { ChatBarButton, type ChatBarButtonRenderer } from "@api/chatButtons";
-import { _generateBotMessageId } from "@api/commands";
+import { _generateBotMessageId, sendBotMessage } from "@api/commands";
 import { createStrings } from "@i18n";
 import { definePlugin } from "@utils/types";
-import { findByCodeLazy, findByPropsLazy } from "@webpack";
-import { DiscordIcon, MessageActions, React, Stores, useStateFromStores } from "@webpack/common";
+import { DiscordIcon, DraftType, React, Stores, useStateFromStores } from "@webpack/common";
 
 const s = createStrings({
     en: { preview: "Preview Message" },
     fr: { preview: "Aperçu du message" }
 });
 
-const DraftType = findByPropsLazy("ChannelMessage", "SlashCommand");
-const createBotMessage = findByCodeLazy('username:"Clyde"');
-
 const objectURLMap = new Map<string, string[]>();
 
 const getDraft = (channelId: string) => Stores.DraftStore.getDraft(channelId, DraftType.ChannelMessage);
-
-function sendPreviewMessage(channelId: string, message: Record<string, unknown>) {
-    const botMessage = createBotMessage({ channelId, content: "", embeds: [] });
-    const merged = { ...botMessage, ...message };
-    MessageActions.receiveMessage(channelId, merged);
-    return merged;
-}
 
 const getImageBox = (url: string): Promise<{ width: number; height: number } | null> =>
     new Promise(resolve => {
@@ -81,7 +70,7 @@ const PreviewButton: ChatBarButtonRenderer = props => {
             tooltip={s("preview")}
             onClick={async () => {
                 const attachments = hasAttachments ? await getAttachments(channelId) : undefined;
-                const message = sendPreviewMessage(channelId, {
+                const message = sendBotMessage(channelId, {
                     content: getDraft(channelId),
                     author: Stores.UserStore.getCurrentUser(),
                     attachments: attachments?.map(a => a.attachment)
