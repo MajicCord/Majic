@@ -85,7 +85,8 @@ function Stat({ tooltip, icon, value, className }: { tooltip: string; icon: Reac
 }
 
 function MemberCount({ isTooltip, tooltipGuildId }: { isTooltip?: boolean; tooltipGuildId?: string }) {
-    const includeVoice = settings.store.voiceActivity && !isTooltip;
+    const { voiceActivity } = settings.use(["voiceActivity"]);
+    const includeVoice = voiceActivity && !isTooltip;
 
     const currentChannel = useStateFromStores(
         [Stores.SelectedChannelStore],
@@ -109,7 +110,7 @@ function MemberCount({ isTooltip, tooltipGuildId }: { isTooltip?: boolean; toolt
     const memberListOnline = useStateFromStores([Stores.ChannelMemberStore], () => {
         if (isTooltip || !guildId) return null;
         const { groups } = Stores.ChannelMemberStore.getProps(guildId, currentChannel?.id);
-        if (groups.length >= 1 && groups[0].id !== "unknown") {
+        if (groups.length >= 1) {
             return groups.reduce((total: number, group: any) => total + (group.id === "offline" ? 0 : group.count), 0);
         }
         return null;
