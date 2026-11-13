@@ -59,5 +59,7 @@ export function _showNextNotice() {
 export const _isMajicNotice = (notice: { id?: unknown } | null | undefined) =>
     typeof notice?.id === "string" && notice.id.startsWith(ID_PREFIX);
 
+export const _hasCurrentNotice = () => current != null;
+
 export const isNoticeShownOrQueued = (message: Notice["message"]) =>
     currentNotice?.message === message || queue.some(notice => notice.message === message);

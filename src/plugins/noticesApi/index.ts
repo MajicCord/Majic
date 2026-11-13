@@ -2,7 +2,7 @@
  * Majic — NoticesAPI core plugin
  */
 
-import { _isMajicNotice, _showNextNotice } from "@api/notices";
+import { _hasCurrentNotice, _isMajicNotice, _showNextNotice } from "@api/notices";
 import { definePlugin } from "@utils/types";
 
 export default definePlugin({
@@ -21,8 +21,8 @@ export default definePlugin({
             find: '"NoticeStore"',
             replacement: [
                 {
-                    match: /(?<=!1(?:;|}))(\i)=null;(?=.{0,80}getPremiumSubscription\(\))/g,
-                    replace: "if($self.isMajicNotice($1))return false;$&"
+                    match: /(?<=!1(?:;|}))\i=null;(?=.{0,80}getPremiumSubscription\(\))/g,
+                    replace: "if($self.hasCurrentNotice())return false;$&"
                 },
                 {
                     match: /(?<=,NOTICE_DISMISS:function\(\i\){)return null!=(\i)/,
@@ -33,5 +33,6 @@ export default definePlugin({
     ],
 
     isMajicNotice: _isMajicNotice,
+    hasCurrentNotice: _hasCurrentNotice,
     showNext: _showNextNotice
 });
