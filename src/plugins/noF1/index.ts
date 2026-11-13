@@ -18,8 +18,8 @@ export default definePlugin({
         {
             find: ',"f1"],comboKeysBindGlobal:',
             replacement: {
-                match: /,"f1"(?=\],comboKeysBindGlobal:)/,
-                replace: ""
+                match: ',"f1"],comboKeysBindGlobal:',
+                replace: "],comboKeysBindGlobal:"
             }
         }
     ]
