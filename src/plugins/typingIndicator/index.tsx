@@ -3,12 +3,15 @@
  */
 
 import { definePluginSettings } from "@api/settings";
+import { isPluginEnabled } from "@renderer/plugins";
 import { createStrings } from "@i18n";
 import { getIntlMessage } from "@utils/discord";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { definePlugin, OptionType } from "@utils/types";
 import { findComponentByCodeLazy } from "@webpack";
 import { React, Stores, Tooltip, UserSummaryItem, useStateFromStores } from "@webpack/common";
+
+import TypingTweaks, { buildSeveralUsers } from "../typingTweaks";
 
 const s = createStrings({
     en: { both: "Avatars and animated dots", dots: "Animated dots", avatars: "Avatars" },
@@ -65,7 +68,9 @@ function getTooltipText(guildId: string, users: string[]) {
         case 1: return getIntlMessage("ONE_USER_TYPING", { a: getDisplayName(guildId, a) });
         case 2: return getIntlMessage("TWO_USERS_TYPING", { a: getDisplayName(guildId, a), b: getDisplayName(guildId, b) });
         case 3: return getIntlMessage("THREE_USERS_TYPING", { a: getDisplayName(guildId, a), b: getDisplayName(guildId, b), c: getDisplayName(guildId, c) });
-        default: return getIntlMessage("SEVERAL_USERS_TYPING");
+        default: return isPluginEnabled(TypingTweaks.name)
+            ? buildSeveralUsers({ users: [a, b].map(id => Stores.UserStore.getUser(id)), count: users.length - 2, guildId })
+            : getIntlMessage("SEVERAL_USERS_TYPING");
     }
 }
 
