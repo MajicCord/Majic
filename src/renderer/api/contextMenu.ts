@@ -4,7 +4,7 @@
 
 import { Logger } from "@utils/logger";
 import { React } from "@webpack/common";
-import { search, wreq } from "@webpack";
+import { filters, waitFor } from "@webpack";
 
 const logger = new Logger("ContextMenu", "#ff79c6");
 
@@ -29,48 +29,16 @@ export function removeContextMenuPatch(navId: string | string[], patch: ContextM
 export const addGlobalContextMenuPatch = (patch: GlobalContextMenuPatch) => void globalPatches.add(patch);
 export const removeGlobalContextMenuPatch = (patch: GlobalContextMenuPatch) => void globalPatches.delete(patch);
 
-const MENU_TYPES: Record<string, string> = {
-    separator: "MenuSeparator",
-    group: "MenuGroup",
-    item: "MenuItem",
-    customitem: "MenuItem",
-    checkbox: "MenuCheckboxItem",
-    radio: "MenuRadioItem",
-    switch: "MenuSwitchItem",
-    textinput: "MenuTextInput",
-    control: "MenuControlItem",
-    compositecontrol: "MenuControlItem"
-};
-
 export const Menu: Record<string, any> = {};
 
-let menuResolved = false;
-
-function resolveMenuComponents() {
-    if (menuResolved) return Object.keys(Menu).length > 0;
-    menuResolved = true;
-
-    const [source] = Object.values(search("Menu API only allows Items")).map(String);
-    if (!source) return false;
-
-    const namespace = /\.type===([\w$]+)\.[\w$]+\)/.exec(source)?.[1];
-    const moduleId = namespace && new RegExp(`[,;\\s]${namespace.replace("$", "\\$")}=[\\w$]+\\((\\d+)\\)`).exec(source)?.[1];
-    if (!moduleId) {
-        logger.error("Could not locate the menu components module");
-        return false;
-    }
-
-    const components = wreq(moduleId);
-    const typeChecks = new RegExp(`\\.type===${namespace.replace("$", "\\$")}\\.([\\w$]+)\\)(?:return [\\w$]+\\.push\\((?:[^{]*?)\\{type:"(\\w+)"|\\{let)`, "g");
-
-    for (const [, key, type] of source.matchAll(typeChecks)) {
-        const name = MENU_TYPES[type ?? "group"];
-        if (name && !Menu[name] && components[key]) Menu[name] = components[key];
-    }
-
-    logger.info(`Menu components found: ${Object.keys(Menu).join(", ")}`);
-    return true;
+export function _registerMenuItem(name: string, component: any) {
+    Object.defineProperty(component, "name", { value: name });
+    Menu[name] = component;
 }
+
+waitFor(filters.componentByCode('path:["empty"]'), component => Menu.Menu = component);
+waitFor(filters.componentByCode(".SLIDER", "renderValue"), component => Menu.MenuSliderControl = component);
+waitFor(filters.componentByCode(".SEARCH)", ".focus()", "query:"), component => Menu.MenuSearchControl = component);
 
 function cloneChildren(children: any): any {
     if (Array.isArray(children)) return children.map(cloneChildren);
@@ -86,8 +54,6 @@ function cloneChildren(children: any): any {
 
 export function _patchMenu(props: { navId: string; children: any; majicMenuArgs?: ArrayLike<unknown> }) {
     try {
-        if (!resolveMenuComponents()) return props;
-
         const navPatches = patchesByNavId.get(props.navId);
         if (!navPatches?.size && !globalPatches.size) return props;
 
