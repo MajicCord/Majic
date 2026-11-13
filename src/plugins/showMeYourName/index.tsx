@@ -48,7 +48,15 @@ const settings = definePluginSettings({
     }
 });
 
-function Username({ author, channel, message, isRepliedMessage, withMentionPrefix, userOverride }: UsernameProps) {
+function Username(props: UsernameProps) {
+    try {
+        return renderName(props);
+    } catch {
+        return <>{props.author?.nick}</>;
+    }
+}
+
+function renderName({ author, channel, message, isRepliedMessage, withMentionPrefix, userOverride }: UsernameProps) {
     const { mode, friendNicknames, displayNames, inReplies } = settings.store;
     const user = userOverride ?? message.author;
 
