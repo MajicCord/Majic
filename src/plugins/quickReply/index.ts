@@ -78,12 +78,14 @@ function getNextMessage(isUp: boolean, isReply: boolean) {
     let messages: any[] = Stores.MessageStore.getMessages(Stores.SelectedChannelStore.getChannelId())._array;
 
     const meId = Stores.UserStore.getCurrentUser().id;
+    const noBlockedMessages = isPluginEnabled("NoBlockedMessages") ? plugins.NoBlockedMessages as any : null;
 
     messages = messages.filter(m => {
         if (m.deleted) return false;
         if (!isReply && m.author.id !== meId) return false;
         if (!MessageTypeSets.REPLYABLE.has(m.type) || m.hasFlag(EPHEMERAL_FLAG)) return false;
         if (settings.store.ignoreBlockedAndIgnored && isBlockedOrIgnored(m.author.id)) return false;
+        if (noBlockedMessages?.shouldIgnoreMessage(m)) return false;
         return true;
     });
 
