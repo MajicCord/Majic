@@ -37,7 +37,6 @@ export default {
     "badges.developer": "Majic Developer",
     "badges.supporter": "Majic Supporter",
     "badges.developerDescription": "Shown on the profiles of the people who build Majic",
-    "badges.supporterPerk": "This badge is a thank-you for the people who support Majic.",
     "badges.supporterAsk": "Majic is free and open source. If you like it, consider supporting its development!",
     "badges.support": "Support Majic",
     "badges.supporterDescription": "Shown on the profiles of the people who support Majic",

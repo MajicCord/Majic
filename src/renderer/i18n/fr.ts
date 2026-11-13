@@ -39,7 +39,6 @@ const fr: Dictionary = {
     "badges.developer": "Développeur Majic",
     "badges.supporter": "Soutien de Majic",
     "badges.developerDescription": "Affiché sur le profil des personnes qui développent Majic",
-    "badges.supporterPerk": "Ce badge est un remerciement pour les personnes qui soutiennent Majic.",
     "badges.supporterAsk": "Majic est gratuit et open source. Si tu l'aimes, pense à soutenir son développement !",
     "badges.support": "Soutenir Majic",
     "badges.supporterDescription": "Affiché sur le profil des personnes qui soutiennent Majic",
