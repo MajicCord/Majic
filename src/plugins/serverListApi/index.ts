@@ -20,15 +20,15 @@ export default definePlugin({
         {
             find: "#{intl::DISCODO_DISABLED}",
             replacement: {
-                match: /(?<=return)(\(0,\i\.jsxs?\)\("div",\{className:\i\.\i,"data-guilds-bar-home":!0[^]*?)(?=\}function \i\(\))/,
+                match: /(?<=#{intl::DISCODO_DISABLED}.+?return)(\(.{0,150}?tutorialId:"friends-list".+?}\))(?=}function)/,
                 replace: '[$1].concat($self.render("above"))'
             }
         },
         {
             find: ".setGuildsTree(",
             replacement: {
-                match: /(?<=#{intl::SERVERS}\),gap:"xs",children:)(\i\.map\([^]{0,60}?\))(?=\})/,
-                replace: '$self.render("in").concat($1)'
+                match: /(?<=#{intl::SERVERS}\),gap:"xs",children:)\i\.map\(.{0,50}\.length\)/,
+                replace: '$self.render("in").concat($&)'
             }
         }
     ],
