@@ -19,6 +19,10 @@ const s = createStrings({
     fr: { desktop: "Ordinateur", web: "Navigateur", mobile: "Mobile", embedded: "Console ou jeu", vr: "Réalité virtuelle" }
 });
 
+const ICON_SIZES: Partial<Record<Platform, number>> = {
+    mobile: 17
+};
+
 const ICONS: Record<Platform, string> = {
     desktop: "ScreenIcon",
     web: "GlobeEarthIcon",
@@ -60,7 +64,7 @@ const settings = definePluginSettings({
 
 function PlatformIcon({ platform, status, small }: { platform: Platform; status: string; small: boolean }) {
     const color = useStatusFillColor(status);
-    const size = small ? 14 : 17;
+    const size = (ICON_SIZES[platform] ?? 20) - (small ? 3 : 0);
     return (
         <Tooltip text={s(ICONS[platform] ? platform : "desktop")}>
             {(props: Record<string, unknown>) => (
@@ -137,6 +141,7 @@ export default definePlugin({
     name: "PlatformIndicators",
     description: "Shows which devices users are online on (desktop, mobile, web...)",
     authors: [{ name: "SnailyStudios" }],
+    dependencies: ["MessageDecorationsAPI", "MemberListDecoratorsAPI"],
     translations: {
         fr: {
             description: "Affiche sur quels appareils les utilisateurs sont en ligne (ordinateur, mobile, navigateur…)",
