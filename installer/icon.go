@@ -40,7 +40,7 @@ func appIcon() image.Image {
 				continue
 			}
 
-			col := color.NRGBA{0xff, 0x00, 0x5a, 0xff} // #ff005a, the site accent
+			col := color.NRGBA{0xff, 0x00, 0x5a, 0xff}
 			for _, s := range stroke {
 				if distanceToSegment(fx, fy, s[0], s[1], s[2], s[3]) <= 3.2 {
 					col = color.NRGBA{0xff, 0xff, 0xff, 0xff}

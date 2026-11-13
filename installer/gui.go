@@ -18,8 +18,6 @@ import (
 	g "github.com/AllenDang/giu"
 )
 
-// Same palette as majicord.com: near-black surfaces, white text, the pink accent kept for the main action.
-// Colors are opaque on purpose (giu does not un-premultiply alpha).
 var (
 	colorBg           = color.RGBA{0x0a, 0x0a, 0x0a, 0xff}
 	colorSurface      = color.RGBA{0x11, 0x11, 0x11, 0xff}
@@ -115,8 +113,6 @@ func openFolder(path string) {
 	}
 }
 
-/* ---------- Theme ---------- */
-
 func theme() *g.StyleSetter {
 	return g.Style().
 		SetStyle(g.StyleVarWindowPadding, 28, 24).
@@ -158,8 +154,6 @@ func theme() *g.StyleSetter {
 func muted(widget g.Widget) g.Widget {
 	return g.Style().SetColor(g.StyleColorText, colorMuted).To(widget)
 }
-
-/* ---------- Widgets ---------- */
 
 func primaryButton(label string, disabled bool, onClick func()) g.Widget {
 	return g.Style().
@@ -226,7 +220,6 @@ func installCard() g.Widget {
 	return card(g.Child().ID("installs").Border(true).Size(-1, height).Layout(installList()))
 }
 
-// card gives a bordered child the tighter inner padding of the site's cards.
 func card(child *g.ChildWidget) g.Widget {
 	return g.Style().SetStyle(g.StyleVarWindowPadding, 12, 12).To(child)
 }

@@ -1,8 +1,5 @@
 name: Check installer
 
-# Builds and tests the installers on pull requests, without publishing anything.
-# The graphical installer, a screenshot of its window and the CLI builds are attached to the run as artifacts.
-
 on:
     pull_request:
         paths:
@@ -51,7 +48,6 @@ jobs:
               id: msys2
               with:
                   msystem: UCRT64
-                  # mesa: software OpenGL, so the window can open on a runner without a GPU (screenshot only)
                   install: mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-mesa
                   path-type: inherit
 
@@ -72,15 +68,12 @@ jobs:
               with:
                   name: installer-gui
                   path: dist/MajicInstaller.exe
-
-            # Best effort: a failed screenshot does not fail the check
             - name: Screenshot the window
               continue-on-error: true
               shell: pwsh
               run: |
                   New-Item -ItemType Directory -Force preview | Out-Null
                   Copy-Item dist/MajicInstaller.exe preview/
-                  # Mesa's opengl32.dll next to the exe, and its own DLLs (libgallium_wgl.dll…) found through PATH
                   $ucrt = "${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin"
                   if (Test-Path "$ucrt\opengl32.dll") { Copy-Item "$ucrt\opengl32.dll" preview/ }
                   $env:PATH = "$ucrt;$env:PATH"
