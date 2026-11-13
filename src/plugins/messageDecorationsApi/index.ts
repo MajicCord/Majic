@@ -16,6 +16,8 @@ export default definePlugin({
     },
     required: true,
 
+    css: ".majic-message-decorations:not(:empty) { position: relative; vertical-align: top; top: 0.1rem; height: calc(1rem + 4px); max-height: calc(1rem + 4px); }",
+
     patches: [
         {
             find: "#{intl::REMOVE_ATTACHMENT_BODY}",
