@@ -25,15 +25,15 @@ export default definePlugin({
         {
             find: "#{intl::REMOVE_ATTACHMENT_BODY}",
             replacement: {
-                match: /(?<=children:)(\[[^\]]{0,100}?this\.renderSuppressConfirmModal\(\)[^\]]{0,100}?\])/,
-                replace: "$self.withAccessories($1,this?.props)"
+                match: /children:(\[[^\]]{0,100}?this.renderSuppressConfirmModal[^\]]{0,100}?\])/,
+                replace: "children:$self.withAccessories($1,this?.props)"
             }
         },
         {
             find: "#{intl::GUILD_COMMUNICATION_DISABLED_ICON_TOOLTIP_BODY}",
             replacement: {
-                match: /(?<=#{intl::GUILD_COMMUNICATION_DISABLED_BOTTOM_SHEET_TITLE}[^]+?renderPopout:[^]+?)(?=\])/,
-                replace: ",$self.renderDecorations(arguments[0])"
+                match: /#{intl::GUILD_COMMUNICATION_DISABLED_BOTTOM_SHEET_TITLE}.+?renderPopout:.+?(?=\])/,
+                replace: "$&,$self.renderDecorations(arguments[0])"
             }
         }
     ],
