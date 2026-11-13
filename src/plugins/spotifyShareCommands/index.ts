@@ -37,8 +37,8 @@ function shareCommand(name: string, link: (track: SpotifyTrack) => string): Maji
         options: [OptionalMessageOption],
         execute(args, { channel }) {
             const track: SpotifyTrack | undefined = Stores.SpotifyStore?.getTrack();
-            if (!track) return sendBotMessage(channel.id, { content: s("notListening"), author: { username: "Majic" } });
-            if (track.id == null) return sendBotMessage(channel.id, { content: s("notFound"), author: { username: "Majic" } });
+            if (!track) return sendBotMessage(channel.id, { content: s("notListening") });
+            if (track.id == null) return sendBotMessage(channel.id, { content: s("notFound") });
 
             const url = link(track);
             const message = findOption<string>(args, "message");
