@@ -14,6 +14,10 @@ export interface Settings {
     plugins: Record<string, PluginSettings>;
     useQuickCss: boolean;
     enabledThemes: string[];
+    uiElements: {
+        chatBarButtons: Record<string, { enabled: boolean }>;
+        messagePopoverButtons: Record<string, { enabled: boolean }>;
+    };
     autoUpdate: boolean;
     autoUpdateNotification: boolean;
     nativeTitleBar: boolean;
@@ -33,6 +37,10 @@ const DEFAULTS: Settings = {
     plugins: {},
     useQuickCss: true,
     enabledThemes: [],
+    uiElements: {
+        chatBarButtons: {},
+        messagePopoverButtons: {}
+    },
     autoUpdate: true,
     autoUpdateNotification: true,
     nativeTitleBar: false,
@@ -56,7 +64,11 @@ function load(): Settings {
     return {
         ...DEFAULTS,
         ...stored,
-        notifications: { ...DEFAULTS.notifications, ...stored.notifications }
+        notifications: { ...DEFAULTS.notifications, ...stored.notifications },
+        uiElements: {
+            chatBarButtons: { ...stored.uiElements?.chatBarButtons },
+            messagePopoverButtons: { ...stored.uiElements?.messagePopoverButtons }
+        }
     };
 }
 

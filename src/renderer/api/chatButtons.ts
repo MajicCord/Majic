@@ -5,7 +5,8 @@
 import type { ReactNode } from "react";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { findCssClassesLazy } from "@webpack";
-import { Clickable, React, Tooltip } from "@webpack/common";
+import { saveSettings, settings } from "@api/settings";
+import { Clickable, React, Tooltip, useEffect, useReducer } from "@webpack/common";
 
 export interface ChatBarProps {
     channel: any;
@@ -17,22 +18,47 @@ export interface ChatBarProps {
 export type ChatBarButtonRenderer = (props: ChatBarProps & { isMainChat: boolean; isAnyChat: boolean }) => ReactNode;
 
 const buttons = new Map<string, ChatBarButtonRenderer>();
+const listeners = new Set<() => void>();
 
 export const addChatBarButton = (id: string, render: ChatBarButtonRenderer) => void buttons.set(id, render);
 export const removeChatBarButton = (id: string) => buttons.delete(id);
 
-export function _injectChatBarButtons(existing: unknown[], props: ChatBarProps) {
-    if (!buttons.size || props?.disabled) return existing;
+export const getChatBarButtonIds = () => [...buttons.keys()];
+
+export const isChatBarButtonEnabled = (id: string) => settings.uiElements.chatBarButtons[id]?.enabled !== false;
+
+export function setChatBarButtonEnabled(id: string, enabled: boolean) {
+    settings.uiElements.chatBarButtons[id] = { enabled };
+    saveSettings();
+    listeners.forEach(listener => listener());
+}
+
+function MajicChatBarButtons(props: ChatBarProps) {
+    const [, rerender] = useReducer((n: number) => n + 1, 0);
+
+    useEffect(() => {
+        listeners.add(rerender);
+        return () => void listeners.delete(rerender);
+    }, []);
 
     const analyticsName = props.type?.analyticsName;
     const isMainChat = analyticsName === "normal";
     const isAnyChat = ["normal", "sidebar"].includes(analyticsName);
-    const ours = [...buttons].map(([id, render]) =>
-        React.createElement(ErrorBoundary, { key: `majic-${id}`, name: `Chat bar button ${id}` },
-            React.createElement(render, { ...props, isMainChat, isAnyChat })
-        )
+
+    return React.createElement(React.Fragment, null,
+        [...buttons]
+            .filter(([id]) => isChatBarButtonEnabled(id))
+            .map(([id, render]) =>
+                React.createElement(ErrorBoundary, { key: id, name: `Chat bar button ${id}` },
+                    React.createElement(render, { ...props, isMainChat, isAnyChat })
+                )
+            )
     );
-    return [...ours, ...existing];
+}
+
+export function _injectChatBarButtons(existing: ReactNode[], props: ChatBarProps) {
+    if (props?.disabled || existing.length === 0) return;
+    existing.unshift(React.createElement(MajicChatBarButtons, { key: "majic-chat-buttons", ...props }));
 }
 
 export interface ChatBarButtonProps {
