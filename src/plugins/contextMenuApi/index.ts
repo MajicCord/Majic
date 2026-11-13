@@ -20,8 +20,8 @@ export default definePlugin({
         {
             find: "Menu API only allows Items",
             replacement: {
-                match: /function (\i)\((\i)\){let{navId:/,
-                replace: "function $1($2){$2=$self.patchMenu($2);let{navId:"
+                match: /(?=let{navId:)(?<=function \i\((\i)\).+?)/,
+                replace: "$1=$self.patchMenu($1);"
             }
         },
         {
