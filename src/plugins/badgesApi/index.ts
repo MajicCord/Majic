@@ -10,20 +10,40 @@ import {
     _getDirectoryBadges,
     _renderBadgeComponent,
     _resetDirectoryBadges,
+    addProfileBadge,
     BadgePosition,
     BadgeRarity,
-    ProfileBadge
+    ProfileBadge,
+    removeProfileBadge
 } from "@api/badges";
 import { createStrings } from "@i18n";
 import { isMajicDeveloper } from "@utils/constants";
+import { Logger } from "@utils/logger";
 import { definePlugin } from "@utils/types";
 
 const s = createStrings({
-    en: { developer: "Majic Developer" },
-    fr: { developer: "Développeur Majic" }
+    en: { developer: "Majic Developer", supporter: "Majic Supporter" },
+    fr: { developer: "Développeur Majic", supporter: "Soutien de Majic" }
 });
 
-const DEVELOPER_ICON = "https://raw.githubusercontent.com/MajicCord/Majic/main/assets/badges/developer.png";
+const ASSETS = "https://raw.githubusercontent.com/MajicCord/Majic/main/assets/badges";
+const DEVELOPER_ICON = `${ASSETS}/developer.png`;
+const SUPPORTER_ICON = `${ASSETS}/supporter.png`;
+
+const logger = new Logger("Badges", "#f1fa8c");
+
+let supporters = new Set<string>();
+
+async function loadSupporters() {
+    try {
+        const res = await fetch(`${ASSETS}/supporters.json`, { cache: "no-cache" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const ids: unknown = await res.json();
+        supporters = new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
+    } catch (err) {
+        logger.error("Failed to load supporters", err);
+    }
+}
 
 const DeveloperBadge: ProfileBadge = {
     id: "majic_developer_badge",
@@ -37,6 +57,19 @@ const DeveloperBadge: ProfileBadge = {
     link: "https://github.com/MajicCord/Majic",
     position: BadgePosition.START,
     shouldShow: ({ userId }) => isMajicDeveloper(userId)
+};
+
+const SupporterBadge: ProfileBadge = {
+    id: "majic_supporter_badge",
+    get description() {
+        return s("supporter");
+    },
+    infoLabel: "Majic",
+    rarity: BadgeRarity.EPIC,
+    iconSrc: SUPPORTER_ICON,
+    largeIconSrc: SUPPORTER_ICON,
+    position: BadgePosition.START,
+    shouldShow: ({ userId }) => supporters.has(userId)
 };
 
 export default definePlugin({
@@ -103,7 +136,15 @@ export default definePlugin({
 
     userProfileBadge: DeveloperBadge,
 
-    stop: _resetDirectoryBadges,
+    start() {
+        addProfileBadge(SupporterBadge);
+        loadSupporters();
+    },
+
+    stop() {
+        removeProfileBadge(SupporterBadge);
+        _resetDirectoryBadges();
+    },
 
     getBadges(profile: { userId: string; guildId: string }) {
         return profile ? _getBadges(profile) : [];
