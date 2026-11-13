@@ -317,11 +317,13 @@ export default definePlugin({
         if (ignored.length === 0) return;
 
         const gamesSeen = Stores.RunningGameStore.getGamesSeen() as Array<{ id?: string; exePath: string }>;
+        const before = ignored.length;
         for (let index = ignored.length - 1; index >= 0; index--) {
             const activity = ignored[index];
             if (activity.type !== ActivitiesTypes.Game) continue;
             if (!gamesSeen.some(game => game.id === activity.id || game.exePath === activity.id)) ignored.splice(index, 1);
         }
+        if (ignored.length !== before) recalculateActivities();
     },
 
     isActivityNotIgnored(props: { type: number; application_id?: string; name?: string }) {
