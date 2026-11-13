@@ -7,13 +7,15 @@ let container: HTMLElement | undefined;
 
 function getContainer() {
     if (container?.isConnected) return container;
-    container = document.createElement("majic-styles");
-    (document.head ?? document.documentElement).append(container);
+    container ??= document.createElement("majic-styles");
+    const userStyles = document.querySelector("majic-root");
+    if (userStyles) document.documentElement.insertBefore(container, userStyles);
+    else document.documentElement.append(container);
     return container;
 }
 
 function whenDocumentReady(callback: () => void) {
-    if (document.head) callback();
+    if (document.documentElement && document.head) callback();
     else document.addEventListener("DOMContentLoaded", callback, { once: true });
 }
 
