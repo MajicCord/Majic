@@ -3,50 +3,58 @@
  */
 
 import { ChatBarButton } from "@api/chatButtons";
+import { addMessagePreSendListener, type MessageSendListener, removeMessagePreSendListener } from "@api/messageEvents";
 import { definePluginSettings } from "@api/settings";
-import { definePlugin, OptionType } from "@utils/types";
 import { createStrings } from "@i18n";
+import { definePlugin, OptionType } from "@utils/types";
 import { DiscordIcon, React, useEffect, useState } from "@webpack/common";
 
 const s = createStrings({
-    en: { on: "Silent mode on", off: "Send silently" },
-    fr: { on: "Mode silencieux activé", off: "Envoyer en silence" }
+    en: { disable: "Disable Silent Message", enable: "Enable Silent Message" },
+    fr: { disable: "Désactiver le message silencieux", enable: "Activer le message silencieux" }
 });
 
+let lastState = false;
+
 const settings = definePluginSettings({
-    keepAcrossChannels: {
+    persistState: {
         type: OptionType.BOOLEAN,
-        description: "Keep silent mode on when switching channels",
-        default: false
+        description: "Keep the state of the silent message toggle when changing channels",
+        default: false,
+        onChange(value: boolean) {
+            if (value === false) lastState = false;
+        }
     },
-    turnOffAfterSending: {
+    autoDisable: {
         type: OptionType.BOOLEAN,
-        description: "Turn silent mode off after sending a message",
+        description: "Automatically disable the silent message toggle again after sending one",
         default: true
     }
 });
 
-let silent = false;
-const listeners = new Set<(value: boolean) => void>();
+function SilentMessageToggle({ isMainChat }: { isMainChat: boolean }) {
+    const [enabled, setEnabled] = useState(lastState);
 
-function setSilent(value: boolean) {
-    silent = value;
-    listeners.forEach(listener => listener(value));
-}
-
-function SilentButton({ isMainChat }: { isMainChat: boolean }) {
-    const [enabled, setEnabled] = useState(silent);
+    const setValue = (value: boolean) => {
+        if (settings.store.persistState) lastState = value;
+        setEnabled(value);
+    };
 
     useEffect(() => {
-        if (!settings.store.keepAcrossChannels) setSilent(false);
-        listeners.add(setEnabled);
-        return () => void listeners.delete(setEnabled);
-    }, []);
+        const listener: MessageSendListener = (_, message) => {
+            if (!enabled) return;
+            if (settings.store.autoDisable) setValue(false);
+            if (!message.content.startsWith("@silent ")) message.content = "@silent " + message.content;
+        };
+
+        addMessagePreSendListener(listener);
+        return () => void removeMessagePreSendListener(listener);
+    }, [enabled]);
 
     if (!isMainChat) return null;
 
     return (
-        <ChatBarButton tooltip={enabled ? s("on") : s("off")} onClick={() => setSilent(!enabled)}>
+        <ChatBarButton tooltip={enabled ? s("disable") : s("enable")} onClick={() => setValue(!enabled)}>
             <DiscordIcon name={enabled ? "BellSlashIcon" : "BellIcon"} color={enabled ? "var(--majic-accent)" : "currentColor"} />
         </ChatBarButton>
     );
@@ -54,26 +62,20 @@ function SilentButton({ isMainChat }: { isMainChat: boolean }) {
 
 export default definePlugin({
     name: "SilentMessageToggle",
-    description: "Adds a chat bar button to send messages without notifying anyone",
+    description: "Adds a button to the chat bar to toggle sending a silent message",
     authors: [{ name: "SnailyStudios" }],
     translations: {
         fr: {
-            description: "Ajoute un bouton à la barre de saisie pour envoyer des messages sans notifier personne",
+            description: "Ajoute un bouton à la barre de saisie pour envoyer un message silencieux",
             options: {
-                keepAcrossChannels: "Garder le mode silencieux en changeant de salon",
-                turnOffAfterSending: "Désactiver le mode silencieux après l'envoi d'un message"
+                persistState: "Garder l'état du bouton en changeant de salon",
+                autoDisable: "Désactiver automatiquement le message silencieux après en avoir envoyé un"
             }
         }
     },
     settings,
 
     chatBarButtons: {
-        silent: props => <SilentButton isMainChat={props.isMainChat} />
-    },
-
-    onBeforeMessageSend(_, message) {
-        if (!silent) return;
-        if (!message.content.startsWith("@silent ")) message.content = `@silent ${message.content}`;
-        if (settings.store.turnOffAfterSending) setSilent(false);
+        silent: props => <SilentMessageToggle isMainChat={props.isMainChat} />
     }
 });
