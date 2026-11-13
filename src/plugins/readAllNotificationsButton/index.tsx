@@ -5,11 +5,11 @@
 import { addServerListElement, removeServerListElement } from "@api/serverList";
 import { definePlugin } from "@utils/types";
 import { createStrings } from "@i18n";
-import { FluxDispatcher, React, showToast, Stores } from "@webpack/common";
+import { FluxDispatcher, React, Stores } from "@webpack/common";
 
 const s = createStrings({
-    en: { button: "Read all", nothing: "Nothing to mark as read", done: "Marked {count} channels as read" },
-    fr: { button: "Tout lire", nothing: "Rien à marquer comme lu", done: "{count} salons marqués comme lus" }
+    en: { button: "Read all" },
+    fr: { button: "Tout lire" }
 });
 
 function unreadChannelsOf(guildId: string) {
@@ -24,14 +24,12 @@ function unreadChannelsOf(guildId: string) {
 
 function markAllAsRead() {
     const channelIds = Object.keys(Stores.GuildStore.getGuilds()).flatMap(unreadChannelsOf);
-    if (!channelIds.length) return showToast({ text: s("nothing") });
 
     FluxDispatcher.dispatch({
         type: "BULK_ACK",
         context: "APP",
         channels: channelIds.map(channelId => ({ channelId, messageId: Stores.ReadStateStore.lastMessageId(channelId), readStateType: 0 }))
     });
-    showToast({ text: s("done", { count: channelIds.length }), variant: "success" });
 }
 
 const ReadAllButton = () => (
@@ -42,11 +40,12 @@ const ReadAllButton = () => (
 
 export default definePlugin({
     name: "ReadAllNotificationsButton",
-    description: "Adds a button to the server list that marks every server as read",
+    description: "Read all server notifications with a single button click",
     authors: [{ name: "SnailyStudios" }],
+    dependencies: ["ServerListAPI"],
     translations: {
         fr: {
-            description: "Ajoute un bouton à la liste des serveurs qui marque tous les serveurs comme lus"
+            description: "Marque toutes les notifications des serveurs comme lues en un seul clic"
         }
     },
 
