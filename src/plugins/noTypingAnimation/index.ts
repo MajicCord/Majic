@@ -18,8 +18,8 @@ export default definePlugin({
         {
             find: "dotCycle",
             replacement: {
-                match: /\{focused:(\i)\}=(?=\(0,\i\.\i\)\(\))/g,
-                replace: "{majicNeverFocused:$1=!1}="
+                match: /focused:(\i)/g,
+                replace: (_: string, focused: string) => `_focused:${focused}=false`
             }
         }
     ]
