@@ -16,19 +16,12 @@ import {
     ProfileBadge,
     removeProfileBadge
 } from "@api/badges";
-import { createStrings } from "@i18n";
-import { isMajicDeveloper } from "@utils/constants";
+import { settings } from "@api/settings";
+import { t } from "@i18n";
+import { BADGE_ASSETS, DEVELOPER_BADGE_ICON, isMajicDeveloper, SUPPORTER_BADGE_ICON } from "@utils/constants";
 import { Logger } from "@utils/logger";
 import { definePlugin } from "@utils/types";
 
-const s = createStrings({
-    en: { developer: "Majic Developer", supporter: "Majic Supporter" },
-    fr: { developer: "Développeur Majic", supporter: "Soutien de Majic" }
-});
-
-const ASSETS = "https://raw.githubusercontent.com/MajicCord/Majic/main/assets/badges";
-const DEVELOPER_ICON = `${ASSETS}/developer.png`;
-const SUPPORTER_ICON = `${ASSETS}/supporter.png`;
 
 const logger = new Logger("Badges", "#f1fa8c");
 
@@ -36,7 +29,7 @@ let supporters = new Set<string>();
 
 async function loadSupporters() {
     try {
-        const res = await fetch(`${ASSETS}/supporters.json`, { cache: "no-cache" });
+        const res = await fetch(`${BADGE_ASSETS}/supporters.json`, { cache: "no-cache" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const ids: unknown = await res.json();
         supporters = new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
@@ -48,28 +41,28 @@ async function loadSupporters() {
 const DeveloperBadge: ProfileBadge = {
     id: "majic_developer_badge",
     get description() {
-        return s("developer");
+        return t("badges.developer");
     },
     infoLabel: "Majic",
     rarity: BadgeRarity.MYTHIC,
-    iconSrc: DEVELOPER_ICON,
-    largeIconSrc: DEVELOPER_ICON,
+    iconSrc: DEVELOPER_BADGE_ICON,
+    largeIconSrc: DEVELOPER_BADGE_ICON,
     link: "https://github.com/MajicCord/Majic",
     position: BadgePosition.START,
-    shouldShow: ({ userId }) => isMajicDeveloper(userId)
+    shouldShow: ({ userId }) => settings.badges.developer && isMajicDeveloper(userId)
 };
 
 const SupporterBadge: ProfileBadge = {
     id: "majic_supporter_badge",
     get description() {
-        return s("supporter");
+        return t("badges.supporter");
     },
     infoLabel: "Majic",
     rarity: BadgeRarity.EPIC,
-    iconSrc: SUPPORTER_ICON,
-    largeIconSrc: SUPPORTER_ICON,
+    iconSrc: SUPPORTER_BADGE_ICON,
+    largeIconSrc: SUPPORTER_BADGE_ICON,
     position: BadgePosition.START,
-    shouldShow: ({ userId }) => supporters.has(userId)
+    shouldShow: ({ userId }) => settings.badges.supporter && supporters.has(userId)
 };
 
 export default definePlugin({

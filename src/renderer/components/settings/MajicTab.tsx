@@ -7,6 +7,7 @@ import { downloadSettingsBackup, uploadSettingsBackup } from "@api/settingsBacku
 import * as Updater from "@api/updater";
 import { checkForUpdates, getRepo, update as installUpdate } from "@api/updater";
 import { t, useLocale } from "@i18n";
+import { DEVELOPER_BADGE_ICON, SUPPORTER_BADGE_ICON } from "@utils/constants";
 import { promptToRestart } from "@utils/promptToRestart";
 import type { ReporterResult } from "@renderer/reporter";
 import { DiscordIcon, React, useEffect, useReducer, useState } from "@webpack/common";
@@ -17,9 +18,10 @@ type WindowSwitch = "nativeTitleBar" | "transparent" | "disableMinSize" | "winCt
 
 const VIBRANCY_STYLES = ["under-page", "content", "window", "selection", "titlebar", "header", "sidebar", "tooltip", "menu", "popover", "fullscreen-ui", "hud"];
 
-function SwitchRow({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange(value: boolean): void }) {
+function SwitchRow({ label, hint, icon, checked, onChange }: { label: string; hint?: string; icon?: string; checked: boolean; onChange(value: boolean): void }) {
     return (
         <div className="majic-row" style={{ marginBottom: 12 }}>
+            {icon && <img src={icon} alt="" width={24} height={24} style={{ marginRight: 10, flexShrink: 0 }} />}
             <div className="majic-row-grow">
                 <Text>{label}</Text>
                 {hint && <Text muted>{hint}</Text>}
@@ -221,6 +223,31 @@ function UpdaterCard({ update }: { update(change: () => void): void }) {
     );
 }
 
+function BadgesCard({ update }: { update(change: () => void): void }) {
+    const badges: Array<{ key: keyof Settings["badges"]; icon: string }> = [
+        { key: "developer", icon: DEVELOPER_BADGE_ICON },
+        { key: "supporter", icon: SUPPORTER_BADGE_ICON }
+    ];
+
+    return (
+        <Card>
+            <SubHeading>{t("badges.title")}</SubHeading>
+            <div style={{ marginBottom: 12 }}>
+                <Text muted>{t("badges.hint")}</Text>
+            </div>
+            {badges.map(({ key, icon }) => (
+                <SwitchRow
+                    key={key}
+                    icon={icon}
+                    label={t(`badges.${key}`)}
+                    checked={settings.badges[key]}
+                    onChange={value => update(() => settings.badges[key] = value)}
+                />
+            ))}
+        </Card>
+    );
+}
+
 export function MajicTab() {
     useLocale();
     const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -264,6 +291,8 @@ export function MajicTab() {
             </Card>
 
             {!IS_DEV && <UpdaterCard update={update} />}
+
+            <BadgesCard update={update} />
 
             <WindowSettings update={update} />
 
