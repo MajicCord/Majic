@@ -4,10 +4,10 @@
 
 import { saveSettings, settings, type Settings } from "@api/settings";
 import { t, useLocale } from "@i18n";
-import { DEVELOPER_BADGE_ICON, SUPPORTER_BADGE_ICON } from "@utils/constants";
-import { React, useReducer } from "@webpack/common";
+import { DEVELOPER_BADGE_ICON, SPONSOR_URL, SUPPORTER_BADGE_ICON } from "@utils/constants";
+import { DiscordIcon, React, useReducer } from "@webpack/common";
 
-import { Card, Heading, Page, Switch, Text } from "../ui";
+import { Button, Card, Heading, Page, Switch, Text } from "../ui";
 
 type BadgeKey = keyof Settings["badges"];
 
@@ -49,6 +49,20 @@ export function BadgesTab() {
             <Text muted>{t("badges.hint")}</Text>
 
             {BADGES.map(({ key, icon }) => <BadgeCard key={key} badge={key} icon={icon} />)}
+
+            <Card>
+                <div className="majic-row">
+                    <div className="majic-row-grow">
+                        <Text><strong>{t("badges.support")}</strong></Text>
+                        <Text muted>{t("badges.supporterAsk")}</Text>
+                    </div>
+                    <Button onClick={() => void MajicNative.openExternal(SPONSOR_URL)}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <DiscordIcon name="HeartIcon" size={16} />{t("badges.support")}
+                        </span>
+                    </Button>
+                </div>
+            </Card>
         </Page>
     );
 }

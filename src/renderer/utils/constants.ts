@@ -12,3 +12,5 @@ export const DEVELOPER_BADGE_ICON = `${BADGE_ASSETS}/developer.png`;
 export const SUPPORTER_BADGE_ICON = `${BADGE_ASSETS}/supporter.png`;
 
 export const isMajicDeveloper = (userId: string) => MAJIC_DEVELOPERS.has(userId);
+
+export const SPONSOR_URL = "https://github.com/sponsors/nullbrik";

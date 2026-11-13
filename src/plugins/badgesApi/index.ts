@@ -22,6 +22,8 @@ import { BADGE_ASSETS, DEVELOPER_BADGE_ICON, isMajicDeveloper, SUPPORTER_BADGE_I
 import { Logger } from "@utils/logger";
 import { definePlugin } from "@utils/types";
 
+import { openSupporterModal } from "./SupporterModal";
+
 
 const logger = new Logger("Badges", "#f1fa8c");
 
@@ -62,6 +64,7 @@ const SupporterBadge: ProfileBadge = {
     iconSrc: SUPPORTER_BADGE_ICON,
     largeIconSrc: SUPPORTER_BADGE_ICON,
     position: BadgePosition.START,
+    onClick: openSupporterModal,
     shouldShow: ({ userId }) => settings.badges.supporter && supporters.has(userId)
 };
 
