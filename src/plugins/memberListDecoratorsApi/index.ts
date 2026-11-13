@@ -26,15 +26,15 @@ export default definePlugin({
         {
             find: "#{intl::GUILD_OWNER}),children:",
             replacement: {
-                match: /children:\[(?=[^]{0,300},lostPermissionTooltipText:)/,
-                replace: '$&$self.render(arguments[0],"guild"),'
+                match: /children:\[(?=.{0,300},lostPermissionTooltipText:)/,
+                replace: 'children:[$self.render(arguments[0],"guild"),'
             }
         },
         {
             find: "PrivateChannel.renderAvatar",
             replacement: {
-                match: /(?<=decorators:)(\i\.isSystemDM\(\)\?[^]+?:null)(?=,)/,
-                replace: '[$self.render(arguments[0],"dm"),$1]'
+                match: /decorators:(\i\.isSystemDM\(\)\?.+?:null)/,
+                replace: 'decorators:[$self.render(arguments[0],"dm"),$1]'
             }
         }
     ],
