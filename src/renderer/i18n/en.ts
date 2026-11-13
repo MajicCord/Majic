@@ -39,6 +39,8 @@ export default {
     "badges.developerDescription": "Shown on the profiles of the people who build Majic",
     "badges.supporterAsk": "Majic is free and open source. If you like it, consider supporting its development!",
     "badges.support": "Support Majic",
+    "badges.custom": "Custom badges",
+    "badges.customDescription": "Personal badges given to some Majic users",
     "badges.supporterDescription": "Shown on the profiles of the people who support Majic",
     "majic.openSettingsFolder": "Open settings folder",
     "majic.export": "Export settings",

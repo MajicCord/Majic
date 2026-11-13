@@ -30,6 +30,7 @@ export interface Settings {
     badges: {
         developer: boolean;
         supporter: boolean;
+        custom: boolean;
     };
     notifications: {
         useNative: "always" | "not-focused" | "never";
@@ -55,7 +56,8 @@ const DEFAULTS: Settings = {
     themeLinks: [],
     badges: {
         developer: true,
-        supporter: true
+        supporter: true,
+        custom: true
     },
     notifications: {
         useNative: "not-focused",

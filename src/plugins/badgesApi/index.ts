@@ -22,19 +22,47 @@ import { BADGE_ASSETS, DEVELOPER_BADGE_ICON, isMajicDeveloper, SUPPORTER_BADGE_I
 import { Logger } from "@utils/logger";
 import { definePlugin } from "@utils/types";
 
-
 const logger = new Logger("Badges", "#f1fa8c");
 
+interface CustomBadge {
+    tooltip: string;
+    icon: string;
+}
+
+const ICON_FILE = /^[\w.-]+\.(?:png|gif|webp)$/;
+
 let supporters = new Set<string>();
+let customBadges: Record<string, CustomBadge[]> = {};
+
+async function fetchJson(file: string): Promise<unknown> {
+    const res = await fetch(`${BADGE_ASSETS}/${file}`, { cache: "no-cache" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+}
 
 async function loadSupporters() {
     try {
-        const res = await fetch(`${BADGE_ASSETS}/supporters.json`, { cache: "no-cache" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const ids: unknown = await res.json();
+        const ids = await fetchJson("supporters.json");
         supporters = new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
     } catch (err) {
         logger.error("Failed to load supporters", err);
+    }
+}
+
+const isCustomBadge = (badge: any): badge is CustomBadge =>
+    typeof badge?.tooltip === "string" && typeof badge?.icon === "string" && ICON_FILE.test(badge.icon);
+
+async function loadCustomBadges() {
+    try {
+        const data = await fetchJson("custom.json");
+        if (!data || typeof data !== "object") return;
+        customBadges = Object.fromEntries(
+            Object.entries(data)
+                .filter(([userId, badges]) => /^\d+$/.test(userId) && Array.isArray(badges))
+                .map(([userId, badges]) => [userId, (badges as unknown[]).filter(isCustomBadge)])
+        );
+    } catch (err) {
+        logger.error("Failed to load custom badges", err);
     }
 }
 
@@ -63,6 +91,25 @@ const SupporterBadge: ProfileBadge = {
     largeIconSrc: SUPPORTER_BADGE_ICON,
     position: BadgePosition.START,
     shouldShow: ({ userId }) => settings.badges.supporter && supporters.has(userId)
+};
+
+const CustomBadges: ProfileBadge = {
+    id: "majic_custom_badges",
+    position: BadgePosition.START,
+    shouldShow: ({ userId }) => settings.badges.custom && !!customBadges[userId]?.length,
+    getBadges: ({ userId }) => (customBadges[userId] ?? []).map((badge, index) => {
+        const icon = `${BADGE_ASSETS}/custom/${badge.icon}`;
+        return {
+            id: `majic_custom_badge_${index}`,
+            description: badge.tooltip,
+            name: badge.tooltip,
+            infoLabel: "Majic",
+            rarity: BadgeRarity.MYTHIC,
+            iconSrc: icon,
+            largeIconSrc: icon,
+            position: BadgePosition.START
+        };
+    })
 };
 
 export default definePlugin({
@@ -131,11 +178,14 @@ export default definePlugin({
 
     start() {
         addProfileBadge(SupporterBadge);
+        addProfileBadge(CustomBadges);
         loadSupporters();
+        loadCustomBadges();
     },
 
     stop() {
         removeProfileBadge(SupporterBadge);
+        removeProfileBadge(CustomBadges);
         _resetDirectoryBadges();
     },
 

@@ -41,6 +41,8 @@ const fr: Dictionary = {
     "badges.developerDescription": "Affiché sur le profil des personnes qui développent Majic",
     "badges.supporterAsk": "Majic est gratuit et open source. Si tu l'aimes, pense à soutenir son développement !",
     "badges.support": "Soutenir Majic",
+    "badges.custom": "Badges personnalisés",
+    "badges.customDescription": "Badges personnels donnés à certains utilisateurs de Majic",
     "badges.supporterDescription": "Affiché sur le profil des personnes qui soutiennent Majic",
     "majic.openSettingsFolder": "Ouvrir le dossier des réglages",
     "majic.export": "Exporter les réglages",

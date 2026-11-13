@@ -13,8 +13,13 @@ type BadgeKey = keyof Settings["badges"];
 
 const BADGES: Array<{ key: BadgeKey; icon: string }> = [
     { key: "developer", icon: DEVELOPER_BADGE_ICON },
-    { key: "supporter", icon: SUPPORTER_BADGE_ICON }
+    { key: "supporter", icon: SUPPORTER_BADGE_ICON },
+    { key: "custom", icon: "ImageIcon" }
 ];
+
+const BadgeIcon = ({ icon }: { icon: string }) => icon.startsWith("https://")
+    ? <img src={icon} alt="" width={32} height={32} style={{ marginRight: 12, flexShrink: 0 }} />
+    : <span style={{ display: "flex", width: 32, height: 32, marginRight: 12, flexShrink: 0, alignItems: "center", justifyContent: "center", color: "var(--interactive-icon-default)" }}><DiscordIcon name={icon} size={24} /></span>;
 
 function BadgeCard({ badge, icon }: { badge: BadgeKey; icon: string }) {
     const [, rerender] = useReducer((n: number) => n + 1, 0);
@@ -29,7 +34,7 @@ function BadgeCard({ badge, icon }: { badge: BadgeKey; icon: string }) {
     return (
         <Card>
             <div className="majic-row">
-                <img src={icon} alt="" width={32} height={32} style={{ marginRight: 12, flexShrink: 0 }} />
+                <BadgeIcon icon={icon} />
                 <div className="majic-row-grow">
                     <Text><strong>{name}</strong></Text>
                     <Text muted>{t(`badges.${badge}Description`)}</Text>
