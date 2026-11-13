@@ -4,6 +4,7 @@
 
 import { MajicTab } from "@components/settings/MajicTab";
 import { PluginsTab } from "@components/settings/PluginsTab";
+import { BadgesTab } from "@components/settings/BadgesTab";
 import { ThemesTab } from "@components/settings/ThemesTab";
 import { ErrorBoundary } from "@utils/ErrorBoundary";
 import { t } from "@i18n";
@@ -110,6 +111,7 @@ export default definePlugin({
                     sidebarItem({ key: "majic_main", title: () => t("settings.majic"), Icon: "MagicWandIcon", Component: MajicTab }),
                     sidebarItem({ key: "majic_plugins", title: () => t("settings.plugins"), Icon: "PuzzlePieceIcon", Component: PluginsTab }),
                     sidebarItem({ key: "majic_themes", title: () => t("settings.themes"), Icon: "PaintbrushThinIcon", Component: ThemesTab }),
+                    sidebarItem({ key: "majic_badges", title: () => t("settings.badges"), Icon: "ShieldIcon", Component: BadgesTab }),
                     ...customEntries.map(sidebarItem)
                 ]
             };

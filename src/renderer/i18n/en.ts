@@ -6,6 +6,7 @@ export default {
     "settings.majic": "Majic",
     "settings.plugins": "Plugins",
     "settings.themes": "Themes",
+    "settings.badges": "Badges",
     "settings.pageError": "Something went wrong in this page, check the console.",
 
     "majic.version": "Version {version}",
@@ -32,7 +33,6 @@ export default {
     "majic.vibrancy": "Window vibrancy",
     "majic.vibrancy.none": "No vibrancy",
     "majic.data": "Settings and data",
-    "badges.title": "Badges",
     "badges.hint": "Choose which Majic badges are shown on profiles. This only changes what you see.",
     "badges.developer": "Majic Developer",
     "badges.supporter": "Majic Supporter",

@@ -8,6 +8,7 @@ const fr: Dictionary = {
     "settings.majic": "Majic",
     "settings.plugins": "Plugins",
     "settings.themes": "Thèmes",
+    "settings.badges": "Badges",
     "settings.pageError": "Un problème est survenu sur cette page, regarde la console.",
 
     "majic.version": "Version {version}",
@@ -34,7 +35,6 @@ const fr: Dictionary = {
     "majic.vibrancy": "Vibrance de la fenêtre",
     "majic.vibrancy.none": "Pas de vibrance",
     "majic.data": "Réglages et données",
-    "badges.title": "Badges",
     "badges.hint": "Choisis quels badges Majic s'affichent sur les profils. Ça ne change que ce que tu vois.",
     "badges.developer": "Développeur Majic",
     "badges.supporter": "Soutien de Majic",
