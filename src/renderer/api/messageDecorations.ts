@@ -40,7 +40,7 @@ export function _withAccessories(children: unknown[], props: { message: any; [ke
 export function _renderDecorations(props: { message: any; [key: string]: unknown }) {
     if (!decorations.size) return null;
 
-    return React.createElement("span", { className: "majic-message-decorations", style: { display: "inline-flex", alignItems: "center", gap: 4, marginLeft: 4 } },
+    return React.createElement("div", { className: "majic-message-decorations-wrapper" },
         [...decorations].map(([id, render]) =>
             React.createElement(ErrorBoundary, { key: `majic-${id}`, name: `Message decoration ${id}` }, React.createElement(render, props))
         )

@@ -18,9 +18,11 @@ export function _renderMemberListDecorators(props: Record<string, unknown>, cont
     if (!decorators.size) return null;
 
     const user = props?.user ?? (props?.channel as any)?.recipients?.[0];
-    return [...decorators].map(([id, decorator]) =>
-        React.createElement(ErrorBoundary, { key: `majic-${id}`, name: `Member list decorator ${id}` },
-            React.createElement(decorator, { ...props, user, context })
+    return React.createElement("div", { className: "majic-member-list-decorators-wrapper" },
+        [...decorators].map(([id, decorator]) =>
+            React.createElement(ErrorBoundary, { key: `majic-${id}`, name: `Member list decorator ${id}` },
+                React.createElement(decorator, { ...props, user, context })
+            )
         )
     );
 }

@@ -16,7 +16,11 @@ export default definePlugin({
     },
     required: true,
 
-    css: "[class*=\"withDisplayNameStyles\"] [class^=\"name\"] { flex: initial; }",
+    css: [
+        ".majic-member-list-decorators-wrapper { display: flex; align-items: center; justify-content: center; gap: 0.25em; }",
+        ".majic-member-list-decorators-wrapper:not(:empty) { margin-left: 0.25em; }",
+        "[class*=\"withDisplayNameStyles\"] [class^=\"name\"] { flex: initial; }"
+    ].join(" "),
 
     patches: [
         {

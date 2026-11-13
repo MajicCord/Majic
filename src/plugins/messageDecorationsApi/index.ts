@@ -16,7 +16,10 @@ export default definePlugin({
     },
     required: true,
 
-    css: ".majic-message-decorations:not(:empty) { position: relative; vertical-align: top; top: 0.1rem; height: calc(1rem + 4px); max-height: calc(1rem + 4px); }",
+    css: [
+        ".majic-message-decorations-wrapper { display: inline-flex; align-items: center; justify-content: center; gap: 0.25em; }",
+        ".majic-message-decorations-wrapper:not(:empty) { margin-left: 0.25em; position: relative; vertical-align: top; top: 0.1rem; height: calc(1rem + 4px); max-height: calc(1rem + 4px); }"
+    ].join(" "),
 
     patches: [
         {
