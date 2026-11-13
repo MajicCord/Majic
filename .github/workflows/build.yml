@@ -114,11 +114,7 @@ jobs:
                   HASH=$(git rev-parse --short HEAD)
                   NOTES="Latest build of Majic from commit ${GITHUB_SHA}. Updated automatically on every push to main."
 
-                  if ! gh release view devbuild > /dev/null 2>&1; then
-                      gh release create devbuild --title "Majic $HASH" --notes "$NOTES" --latest
-                  fi
-
-                  gh release upload devbuild --clobber dist/*
-                  gh release edit devbuild --title "Majic $HASH" --notes "$NOTES" --latest
+                  gh release delete devbuild --cleanup-tag --yes > /dev/null 2>&1 || true
+                  gh release create devbuild dist/* --target "$GITHUB_SHA" --title "Majic $HASH" --notes "$NOTES" --latest
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
