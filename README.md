@@ -1,7 +1,7 @@
 # Majic
 
 ![](https://img.shields.io/badge/license-GPL--3.0-7c3aed?style=for-the-badge)
-![](https://img.shields.io/badge/status-early%20development-ec4899?style=for-the-badge)
+![](https://img.shields.io/badge/status-beta-ec4899?style=for-the-badge)
 
 A little bit of magic for your Discord client
 
@@ -15,7 +15,12 @@ A little bit of magic for your Discord client
 
 ## Installing / Uninstalling
 
-Majic is still in early development and doesn't have an installer yet.
+Download the installer from the [latest release](https://github.com/MajicCord/Majic/releases/latest):
+
+-   **Windows**: `MajicInstaller.exe`
+-   **Linux** and **macOS**: `MajicInstallerCli-linux` / `MajicInstallerCli-macos`, from a terminal
+
+Pick your Discord install, then click **Install**. Majic updates itself automatically afterwards. Use **Uninstall** in the same installer to remove it.
 
 <details>
 <summary>Install from source</summary>
