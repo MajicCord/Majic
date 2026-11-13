@@ -70,7 +70,7 @@ export function PluginsTab() {
     const visible = sorted.filter(plugin => {
         if (filter === "enabled" && !isPluginEnabled(plugin.name)) return false;
         if (filter === "disabled" && isPluginEnabled(plugin.name)) return false;
-        return !query || plugin.name.toLowerCase().includes(query) || pluginDescription(plugin).toLowerCase().includes(query);
+        return !query || plugin.name.toLowerCase().includes(query.replace(/\s+/g, "")) || pluginDescription(plugin).toLowerCase().includes(query);
     });
 
     return (
