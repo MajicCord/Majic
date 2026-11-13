@@ -2,166 +2,197 @@
  * Majic — VcNarrator plugin
  */
 
-import { Button, Select } from "@components/ui";
-import { definePluginSettings } from "@api/settings";
-import { definePlugin, OptionType } from "@utils/types";
-import { createStrings, t } from "@i18n";
-import { React, Stores, useEffect, useState } from "@webpack/common";
+import { Button, SubHeading, Text } from "@components/ui";
+import { Logger } from "@utils/logger";
+import { definePlugin } from "@utils/types";
+import { React, Stores, useMemo } from "@webpack/common";
+import type { ReactElement } from "react";
 
-const s = createStrings({
-    en: { systemDefault: "System default" },
-    fr: { systemDefault: "Voix par défaut du système" }
-});
+import { getCurrentVoice, s, settings } from "./settings";
 
-type EventType = "join" | "leave" | "move";
-
-interface VoiceStateUpdate {
+interface VoiceStateChangeEvent {
     userId: string;
-    channelId?: string | null;
-    oldChannelId?: string | null;
-    sessionId?: string;
+    channelId?: string;
+    oldChannelId?: string;
+    deaf: boolean;
+    mute: boolean;
+    selfDeaf: boolean;
+    selfMute: boolean;
+    sessionId: string;
 }
 
-function VoicePicker({ setValue }: { setValue(value: string): void }) {
-    const [voices, setVoices] = useState(() => speechSynthesis.getVoices());
-    const [selected, setSelected] = useState<string>(settings.store.voice ?? "");
+const MESSAGE_TYPES = ["join", "leave", "move", "mute", "unmute", "deafen", "undeafen"] as const;
+type MessageType = typeof MESSAGE_TYPES[number];
 
-    useEffect(() => {
-        const update = () => setVoices(speechSynthesis.getVoices());
-        speechSynthesis.addEventListener("voiceschanged", update);
-        return () => speechSynthesis.removeEventListener("voiceschanged", update);
-    }, []);
+const IS_LINUX = navigator.platform.toLowerCase().includes("linux");
 
-    const options = [{ label: s("systemDefault"), value: "" }, ...voices.map(v => ({ label: `${v.name} (${v.lang})`, value: v.voiceURI }))];
-
-    return (
-        <div className="majic-row">
-            <div className="majic-row-grow">
-                <Select value={selected} options={options} onChange={value => { setSelected(value); setValue(value); }} />
-            </div>
-            <Button variant="secondary" onClick={() => speak(format(settings.store.joinMessage, "Majic", "general"))}>{t("ui.test")}</Button>
-        </div>
-    );
-}
-
-const settings = definePluginSettings({
-    voice: {
-        type: OptionType.COMPONENT,
-        description: "Narrator voice",
-        component: VoicePicker,
-        default: ""
-    },
-    volume: {
-        type: OptionType.SLIDER,
-        description: "Volume",
-        markers: [0, 0.25, 0.5, 0.75, 1],
-        default: 1
-    },
-    rate: {
-        type: OptionType.SLIDER,
-        description: "Speed",
-        markers: [0.5, 1, 1.5, 2, 3],
-        default: 1
-    },
-    sayOwnName: {
-        type: OptionType.BOOLEAN,
-        description: "Say your own name when you join, leave or move",
-        default: false
-    },
-    joinMessage: {
-        type: OptionType.STRING,
-        description: "Join message ({{USER}} and {{CHANNEL}} are replaced)",
-        default: "{{USER}} joined"
-    },
-    leaveMessage: {
-        type: OptionType.STRING,
-        description: "Leave message",
-        default: "{{USER}} left"
-    },
-    moveMessage: {
-        type: OptionType.STRING,
-        description: "Move message",
-        default: "{{USER}} moved to {{CHANNEL}}"
-    }
-});
+const message = (type: string): string => (settings.store as Record<string, any>)[`${type}Message`] ?? "";
 
 function speak(text: string) {
-    if (!text.trim()) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voice = speechSynthesis.getVoices().find(v => v.voiceURI === settings.store.voice);
-    if (voice) utterance.voice = voice;
-    utterance.volume = settings.store.volume;
-    utterance.rate = settings.store.rate;
-    speechSynthesis.speak(utterance);
+    if (!text || (window as any).__OVERLAY__) return;
+
+    const { volume, rate } = settings.store;
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.voice = getCurrentVoice()!;
+    speech.volume = volume;
+    speech.rate = rate;
+    speechSynthesis.speak(speech);
 }
 
-const cleanName = (name: string) => name.normalize("NFKC").replace(/[^\p{Letter}\p{Number}\p{Punctuation}\s]/gu, "").trim();
+function clean(text: string) {
+    const replacer = settings.store.latinOnly
+        ? /[^\p{Script=Latin}\p{Number}\p{Punctuation}\s]/gu
+        : /[^\p{Letter}\p{Number}\p{Punctuation}\s]/gu;
 
-function format(template: string, user: string, channel: string) {
-    return template
-        .replaceAll("{{USER}}", user ? cleanName(user) || "Someone" : "")
-        .replaceAll("{{CHANNEL}}", cleanName(channel) || "a channel");
+    return text.normalize("NFKC").replace(replacer, "").replace(/_{2,}/g, "_").trim();
 }
 
-let myChannelId: string | null | undefined;
+function formatText(text: string, user: string, channel: string, displayName: string, nickname: string) {
+    return text
+        .replaceAll("{{USER}}", clean(user) || (user ? s("someone") : ""))
+        .replaceAll("{{CHANNEL}}", clean(channel) || s("channel"))
+        .replaceAll("{{DISPLAY_NAME}}", clean(displayName) || (displayName ? s("someone") : ""))
+        .replaceAll("{{NICKNAME}}", clean(nickname) || (nickname ? s("someone") : ""));
+}
 
-function eventOf(update: VoiceStateUpdate, isMe: boolean): [EventType, string] | null {
-    let previous = update.oldChannelId;
-    if (isMe) {
-        previous = myChannelId;
-        myChannelId = update.channelId;
+let myLastChannelId: string | undefined;
+
+function getTypeAndChannelId({ channelId, oldChannelId }: VoiceStateChangeEvent, isMe: boolean): [string, string] {
+    if (isMe && channelId !== myLastChannelId) {
+        oldChannelId = myLastChannelId;
+        myLastChannelId = channelId;
     }
 
-    if (update.channelId === previous) return null;
-    if (update.channelId) return [previous ? "move" : "join", update.channelId];
-    if (previous) return ["leave", previous];
-    return null;
+    if (channelId !== oldChannelId) {
+        if (channelId) return [oldChannelId ? "move" : "join", channelId];
+        if (oldChannelId) return ["leave", oldChannelId];
+    }
+    return ["", ""];
 }
 
-function displayName(userId: string) {
-    const user = Stores.UserStore.getUser(userId);
-    const guildId = Stores.SelectedGuildStore.getGuildId();
-    return (guildId && Stores.GuildMemberStore.getNick(guildId, userId)) ?? user?.globalName ?? user?.username ?? "";
+function playSample(type: MessageType) {
+    const currentUser = Stores.UserStore.getCurrentUser();
+    const myGuildId = Stores.SelectedGuildStore.getGuildId();
+
+    speak(formatText(
+        message(type),
+        currentUser.username,
+        "general",
+        currentUser.globalName ?? currentUser.username,
+        Stores.GuildMemberStore.getNick(myGuildId, currentUser.id) ?? currentUser.username
+    ));
+}
+
+function announceSelfToggle(kind: "mute" | "deaf") {
+    const channelId = Stores.SelectedChannelStore.getVoiceChannelId();
+    const state = Stores.VoiceStateStore.getVoiceStateForChannel(channelId);
+    if (!state) return;
+
+    const event = kind === "mute"
+        ? state.mute || state.selfMute ? "unmute" : "mute"
+        : state.deaf || state.selfDeaf ? "undeafen" : "deafen";
+    speak(formatText(message(event), "", Stores.ChannelStore.getChannel(channelId).name, "", ""));
+}
+
+function About() {
+    const [hasVoices, hasEnglishVoices] = useMemo(() => {
+        const voices = speechSynthesis.getVoices();
+        return [voices.length !== 0, voices.some(voice => voice.lang.startsWith("en"))];
+    }, []);
+
+    let error: ReactElement | null = null;
+    if (!hasVoices) {
+        error = <div className="majic-notice-card"><Text>{s("noVoicesError") + (IS_LINUX ? s("noVoicesLinux") : s("noVoicesOther"))}</Text></div>;
+    } else if (!hasEnglishVoices) {
+        error = <div className="majic-notice-card"><Text>{s("noEnglish")}</Text></div>;
+    }
+
+    return (
+        <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Text>{s("intro")}</Text>
+            <Text>{s("placeholders")}</Text>
+            {hasEnglishVoices && (
+                <>
+                    <SubHeading>{s("examples")}</SubHeading>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
+                        {MESSAGE_TYPES.map(type => (
+                            <Button key={type} onClick={() => playSample(type)}>{s(type)}</Button>
+                        ))}
+                    </div>
+                </>
+            )}
+            {error}
+        </section>
+    );
 }
 
 export default definePlugin({
     name: "VcNarrator",
-    description: "Reads out loud when people join, leave or move in your voice channel",
+    description: "Announces when users join, leave, or move voice channels via narrator",
     authors: [{ name: "SnailyStudios" }],
     translations: {
         fr: {
-            description: "Lit à voix haute quand quelqu'un rejoint, quitte ou change de salon vocal",
+            description: "Annonce avec le narrateur quand des utilisateurs rejoignent, quittent ou changent de salon vocal",
             options: {
-                voice: "Voix du narrateur",
-                volume: "Volume",
-                rate: "Vitesse",
-                sayOwnName: "Dire ton propre nom quand tu rejoins, quittes ou changes de salon",
-                joinMessage: "Message d'arrivée ({{USER}} et {{CHANNEL}} sont remplacés)",
+                volume: "Volume du narrateur",
+                rate: "Vitesse du narrateur",
+                sayOwnName: "Dire ton propre nom",
+                latinOnly: "Retirer les caractères non latins des noms avant de les prononcer",
+                joinMessage: "Message d'arrivée",
                 leaveMessage: "Message de départ",
-                moveMessage: "Message de changement de salon"
+                moveMessage: "Message de changement de salon",
+                muteMessage: "Message de micro coupé (seulement toi pour l'instant)",
+                unmuteMessage: "Message de micro réactivé (seulement toi pour l'instant)",
+                deafenMessage: "Message de son coupé (seulement toi pour l'instant)",
+                undeafenMessage: "Message de son réactivé (seulement toi pour l'instant)"
             }
         }
     },
     settings,
 
     flux: {
-        VOICE_STATE_UPDATES({ voiceStates }: { voiceStates: VoiceStateUpdate[] }) {
-            const myId = Stores.UserStore.getCurrentUser()?.id;
-            const myVoiceChannel = Stores.SelectedChannelStore.getVoiceChannelId();
+        VOICE_STATE_UPDATES({ voiceStates }: { voiceStates: VoiceStateChangeEvent[] }) {
+            const myGuildId = Stores.SelectedGuildStore.getGuildId();
+            const myChannelId = Stores.SelectedChannelStore.getVoiceChannelId();
+            const myId = Stores.UserStore.getCurrentUser().id;
 
-            for (const update of voiceStates) {
-                const isMe = update.userId === myId;
-                if (isMe && update.sessionId && update.sessionId !== Stores.AuthenticationStore?.getSessionId()) continue;
-                if (!isMe && (!myVoiceChannel || (update.channelId !== myVoiceChannel && update.oldChannelId !== myVoiceChannel))) continue;
+            if (Stores.ChannelStore.getChannel(myChannelId)?.type === 13) return;
 
-                const event = eventOf(update, isMe);
-                if (!event) continue;
+            for (const state of voiceStates) {
+                const { userId, channelId, oldChannelId } = state;
+                const isMe = userId === myId;
+                if (isMe && state.sessionId !== Stores.AuthenticationStore.getSessionId()) continue;
+                if (!isMe) {
+                    if (!myChannelId) continue;
+                    if (channelId !== myChannelId && oldChannelId !== myChannelId) continue;
+                }
 
-                const [type, channelId] = event;
-                const user = isMe && !settings.store.sayOwnName ? "" : displayName(update.userId);
-                const channel = Stores.ChannelStore.getChannel(channelId)?.name ?? "";
-                speak(format(settings.store[`${type}Message`], user, channel));
+                const [type, id] = getTypeAndChannelId(state, isMe);
+                if (!type) continue;
+
+                const user = isMe && !settings.store.sayOwnName ? "" : Stores.UserStore.getUser(userId).username;
+                const displayName = user && (Stores.UserStore.getUser(userId).globalName ?? user);
+                const nickname = user && (Stores.GuildMemberStore.getNick(myGuildId, userId) ?? displayName);
+                const channel = Stores.ChannelStore.getChannel(id).name;
+
+                speak(formatText(message(type), user, channel, displayName, nickname));
             }
+        },
+
+        AUDIO_TOGGLE_SELF_MUTE() {
+            announceSelfToggle("mute");
+        },
+
+        AUDIO_TOGGLE_SELF_DEAF() {
+            announceSelfToggle("deaf");
         }
-    }
+    },
+
+    start() {
+        if (typeof speechSynthesis === "undefined" || speechSynthesis.getVoices().length === 0) {
+            new Logger("VcNarrator", "#ff79c6").warn("SpeechSynthesis not supported or no Narrator voices found. Thus, this plugin will not work. Check my Settings for more info");
+        }
+    },
+
+    settingsAboutComponent: About
 });
