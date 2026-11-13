@@ -16,7 +16,7 @@ const settings = definePluginSettings({
 });
 
 function counterColor(percent: number) {
-    if (!settings.store.colorEffects) return "var(--text-muted)";
+    if (!settings.store.colorEffects) return "var(--primary-330)";
     if (percent < 50) return "var(--text-muted)";
     if (percent < 75) return "var(--yellow-330, #f0b232)";
     if (percent < 90) return "var(--orange-330, #f57731)";
