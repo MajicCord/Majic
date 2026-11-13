@@ -8,13 +8,13 @@ import { findGroupChildrenByChildId, Menu } from "@api/contextMenu";
 import { definePluginSettings } from "@api/settings";
 import { createStrings } from "@i18n";
 import { definePlugin, OptionType } from "@utils/types";
-import { DiscordIcon, FluxDispatcher, React, useEffect, useState } from "@webpack/common";
+import { DiscordIcon, FluxDispatcher, React } from "@webpack/common";
 
 const s = createStrings({
     en: {
         on: "Disable silent typing",
         off: "Enable silent typing",
-        menu: "Silent typing",
+        menu: "Enable Silent Typing",
         commandDescription: "Turn silent typing on or off",
         valueDescription: "Whether to hide that you are typing",
         enabled: "Silent typing enabled",
@@ -23,7 +23,7 @@ const s = createStrings({
     fr: {
         on: "Désactiver la frappe silencieuse",
         off: "Activer la frappe silencieuse",
-        menu: "Frappe silencieuse",
+        menu: "Activer la frappe silencieuse",
         commandDescription: "Active ou désactive la frappe silencieuse",
         valueDescription: "Masquer ou non que tu écris",
         enabled: "Frappe silencieuse activée",
@@ -55,33 +55,20 @@ const settings = definePluginSettings({
     }
 });
 
-const listeners = new Set<() => void>();
-
-function setEnabled(value: boolean) {
-    settings.store.isEnabled = value;
-    listeners.forEach(listener => listener());
-}
-
-function useEnabled() {
-    const [, rerender] = useState(0);
-    useEffect(() => {
-        const listener = () => rerender(n => n + 1);
-        listeners.add(listener);
-        return () => void listeners.delete(listener);
-    }, []);
-    return settings.store.isEnabled;
-}
+const toggle = () => settings.store.isEnabled = !settings.store.isEnabled;
 
 function TypingButton({ isMainChat }: { isMainChat: boolean }) {
-    const enabled = useEnabled();
-    if (!isMainChat || !settings.store.showIcon) return null;
+    const { isEnabled, showIcon } = settings.use(["isEnabled", "showIcon"]);
+    if (!isMainChat || !showIcon) return null;
 
     return (
-        <ChatBarButton tooltip={enabled ? s("on") : s("off")} onClick={() => setEnabled(!enabled)}>
-            <DiscordIcon name="KeyboardIcon" color={enabled ? "var(--majic-accent)" : "currentColor"} />
+        <ChatBarButton tooltip={isEnabled ? s("on") : s("off")} onClick={toggle}>
+            <DiscordIcon name="KeyboardIcon" color={isEnabled ? "var(--majic-accent)" : "currentColor"} />
         </ChatBarButton>
     );
 }
+
+
 
 export default definePlugin({
     name: "SilentTyping",
@@ -124,9 +111,9 @@ export default definePlugin({
                 type: ApplicationCommandOptionType.BOOLEAN
             }],
             inputType: ApplicationCommandInputType.BUILT_IN,
-            execute(args, { channel }) {
-                setEnabled(Boolean(findOption(args, "value", !settings.store.isEnabled)));
-                sendBotMessage(channel.id, { content: settings.store.isEnabled ? s("enabled") : s("disabled"), author: { username: "Majic" } });
+            async execute(args, { channel }) {
+                settings.store.isEnabled = !!findOption(args, "value", !settings.store.isEnabled);
+                sendBotMessage(channel.id, { content: settings.store.isEnabled ? s("enabled") : s("disabled") });
             }
         }
     ],
@@ -137,7 +124,8 @@ export default definePlugin({
 
     contextMenus: {
         "textarea-context"(children) {
-            if (!settings.store.contextMenu || !Menu.MenuCheckboxItem) return;
+            const { isEnabled, contextMenu } = settings.use(["isEnabled", "contextMenu"]);
+            if (!contextMenu) return;
             const group = findGroupChildrenByChildId("submit-button", children);
             if (!group) return;
 
@@ -146,16 +134,15 @@ export default definePlugin({
                 <Menu.MenuCheckboxItem
                     id="majic-silent-typing"
                     label={s("menu")}
-                    checked={settings.store.isEnabled}
-                    action={() => setEnabled(!settings.store.isEnabled)}
+                    checked={isEnabled}
+                    action={toggle}
                 />
             );
         }
     },
 
-    startTyping(channelId: string) {
-        const exceptions = settings.store.showTypingIn.split(",").map(id => id.trim()).filter(Boolean);
-        if (settings.store.isEnabled && !exceptions.includes(channelId)) return;
+    async startTyping(channelId: string) {
+        if (settings.store.isEnabled && !settings.store.showTypingIn.includes(channelId)) return;
         FluxDispatcher.dispatch({ type: "TYPING_START_LOCAL", channelId });
     }
 });
