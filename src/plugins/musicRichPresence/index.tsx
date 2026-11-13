@@ -6,7 +6,6 @@ import { definePluginSettings } from "@api/settings";
 import { Button, Card, SubHeading, Text } from "@components/ui";
 import { createStrings } from "@i18n";
 import { definePlugin, OptionType } from "@utils/types";
-import { filters, mapMangledModuleLazy } from "@webpack";
 import { ApplicationAssetUtils, FluxDispatcher, React, Stores } from "@webpack/common";
 
 import { LastFMScrobbler } from "./lastfm";
