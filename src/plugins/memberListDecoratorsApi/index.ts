@@ -16,6 +16,8 @@ export default definePlugin({
     },
     required: true,
 
+    css: "[class*=\"withDisplayNameStyles\"] [class^=\"name\"] { flex: initial; }",
+
     patches: [
         {
             find: "#{intl::GUILD_OWNER}),children:",
