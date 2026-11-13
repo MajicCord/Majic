@@ -21,12 +21,12 @@ export default definePlugin({
             find: '"NoticeStore"',
             replacement: [
                 {
-                    match: /(\i)=null;(?=let \i=\i\.\i\.getCurrentUser\(\);if\(null==\i\)return!1;let \i=\i\.\i\.getPremiumSubscription\(\))/,
-                    replace: "if($self.isMajicNotice($1))return!1;$&"
+                    match: /(?<=!1(?:;|}))(\i)=null;(?=.{0,80}getPremiumSubscription\(\))/g,
+                    replace: "if($self.isMajicNotice($1))return false;$&"
                 },
                 {
-                    match: /(?<=NOTICE_DISMISS:function\((\i)\)\{)(?=return null!=(\i)&&)/,
-                    replace: "if($self.isMajicNotice($2)&&(null==$1.id||$1.id===$2.id))return $2=null,$self.showNext(),!0;"
+                    match: /(?<=,NOTICE_DISMISS:function\(\i\){)return null!=(\i)/,
+                    replace: (m: string, notice: string) => `if($self.isMajicNotice(${notice}))return(${notice}=null,$self.showNext(),true);${m}`
                 }
             ]
         }
