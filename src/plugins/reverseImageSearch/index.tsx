@@ -3,45 +3,70 @@
  */
 
 import { findGroupChildrenByChildId, Menu } from "@api/contextMenu";
-import { definePlugin } from "@utils/types";
 import { createStrings } from "@i18n";
-import { React } from "@webpack/common";
+import { definePlugin } from "@utils/types";
+import { DiscordIcon, React } from "@webpack/common";
 
 const s = createStrings({
-    en: { search: "Search image", all: "All engines" },
-    fr: { search: "Rechercher l'image", all: "Tous les moteurs" }
+    en: { search: "Search Image", all: "All" },
+    fr: { search: "Rechercher l'image", all: "Tous" }
 });
 
-const ENGINES: Record<string, string> = {
-    "Google Lens": "https://lens.google.com/uploadbyurl?url=",
-    Bing: "https://www.bing.com/images/search?view=detailv2&iss=sbi&q=imgurl:",
+const Engines: Record<string, string> = {
+    Google: "https://lens.google.com/uploadbyurl?url=",
     Yandex: "https://yandex.com/images/search?rpt=imageview&url=",
-    TinEye: "https://www.tineye.com/search?url=",
     SauceNAO: "https://saucenao.com/search.php?url=",
-    IQDB: "https://iqdb.org/?url="
+    IQDB: "https://iqdb.org/?url=",
+    Bing: "https://www.bing.com/images/search?view=detailv2&iss=sbi&q=imgurl:",
+    TinEye: "https://www.tineye.com/search?url=",
+    ImgOps: "https://imgops.com/start?url="
 };
 
-const openSearch = (engine: string, src: string) => window.open(ENGINES[engine] + encodeURIComponent(src), "_blank");
+const SearchIcon = () => <DiscordIcon name="MagnifyingGlassIcon" size={18} />;
+const OpenExternalIcon = () => <DiscordIcon name="LinkExternalSmallIcon" size={18} />;
 
-function searchItem(src: string) {
+function search(src: string, engine: string) {
+    open(engine + encodeURIComponent(src), "_blank");
+}
+
+function makeSearchItem(src: string) {
     return (
-        <Menu.MenuItem id="majic-search-image" key="majic-search-image" label={s("search")}>
-            {Object.keys(ENGINES).map(engine => (
-                <Menu.MenuItem key={engine} id={`majic-search-image-${engine}`} label={engine} action={() => openSearch(engine, src)} />
-            ))}
-            <Menu.MenuSeparator />
-            <Menu.MenuItem id="majic-search-image-all" label={s("all")} action={() => Object.keys(ENGINES).forEach(engine => openSearch(engine, src))} />
+        <Menu.MenuItem
+            label={s("search")}
+            key="search-image"
+            id="search-image"
+            leadingAccessory={{ type: "icon", icon: SearchIcon }}
+        >
+            {Object.keys(Engines).map(engine => {
+                const key = "search-image-" + engine;
+                return (
+                    <Menu.MenuItem
+                        key={key}
+                        id={key}
+                        label={engine}
+                        leadingAccessory={{ type: "image", src: `https://icons.duckduckgo.com/ip3/${new URL(Engines[engine]).host}.ico` }}
+                        action={() => search(src, Engines[engine])}
+                    />
+                );
+            })}
+            <Menu.MenuItem
+                key="search-image-all"
+                id="search-image-all"
+                label={s("all")}
+                leadingAccessory={{ type: "icon", icon: OpenExternalIcon }}
+                action={() => Object.values(Engines).forEach(engine => search(src, engine))}
+            />
         </Menu.MenuItem>
     );
 }
 
 export default definePlugin({
     name: "ReverseImageSearch",
-    description: "Adds a \"Search image\" item to image context menus, with Google Lens, Bing, Yandex and more",
+    description: "Adds image search to image context menus",
     authors: [{ name: "SnailyStudios" }],
     translations: {
         fr: {
-            description: "Ajoute « Rechercher l'image » au menu clic droit des images, avec Google Lens, Bing, Yandex et plus"
+            description: "Ajoute la recherche d'image au menu clic droit des images"
         }
     },
 
@@ -50,22 +75,21 @@ export default definePlugin({
             find: "#{intl::MESSAGE_ACTIONS_MENU_LABEL}),shouldHideMediaOptions:",
             replacement: {
                 match: /favoriteableType:\i,(?<=(\i)\.getAttribute\("data-type"\).+?)/,
-                replace: (code, target) => `${code}majicImageSearchType:${target}.getAttribute("data-role"),`
+                replace: (code: string, target: string) => `${code}majicImageSearchType:${target}.getAttribute("data-role"),`
             }
         }
     ],
 
     contextMenus: {
         message(children, props?: { itemSrc?: string; itemHref?: string; majicImageSearchType?: string }) {
-            if (props?.majicImageSearchType !== "img" || !Menu.MenuItem) return;
+            if (props?.majicImageSearchType !== "img") return;
             const src = props.itemHref ?? props.itemSrc;
-            if (!src) return;
-            (findGroupChildrenByChildId("copy-link", children) ?? children).push(searchItem(src));
+            findGroupChildrenByChildId("copy-link", children)?.push(makeSearchItem(src!));
         },
 
         "image-context"(children, props?: { src?: string }) {
-            if (!props?.src || !Menu.MenuItem) return;
-            (findGroupChildrenByChildId("copy-native-link", children) ?? children).push(searchItem(props.src));
+            if (!props?.src) return;
+            (findGroupChildrenByChildId("copy-native-link", children) ?? children).push(makeSearchItem(props.src));
         }
     }
 });
