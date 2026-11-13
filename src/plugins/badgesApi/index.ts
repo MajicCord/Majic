@@ -9,9 +9,35 @@ import {
     _getDirectoryBadgeId,
     _getDirectoryBadges,
     _renderBadgeComponent,
-    _resetDirectoryBadges
+    _resetDirectoryBadges,
+    BadgePosition,
+    BadgeRarity,
+    ProfileBadge
 } from "@api/badges";
+import { createStrings } from "@i18n";
+import { isMajicDeveloper } from "@utils/constants";
 import { definePlugin } from "@utils/types";
+
+const s = createStrings({
+    en: { developer: "Majic Developer" },
+    fr: { developer: "Développeur Majic" }
+});
+
+const DEVELOPER_ICON = "https://raw.githubusercontent.com/MajicCord/Majic/main/assets/badges/developer.png";
+
+const DeveloperBadge: ProfileBadge = {
+    id: "majic_developer_badge",
+    get description() {
+        return s("developer");
+    },
+    infoLabel: "Majic",
+    rarity: BadgeRarity.MYTHIC,
+    iconSrc: DEVELOPER_ICON,
+    largeIconSrc: DEVELOPER_ICON,
+    link: "https://github.com/MajicCord/Majic",
+    position: BadgePosition.START,
+    shouldShow: ({ userId }) => isMajicDeveloper(userId)
+};
 
 export default definePlugin({
     name: "BadgesAPI",
@@ -74,6 +100,8 @@ export default definePlugin({
             }
         }
     ],
+
+    userProfileBadge: DeveloperBadge,
 
     stop: _resetDirectoryBadges,
 
