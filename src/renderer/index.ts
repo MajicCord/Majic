@@ -7,6 +7,7 @@ import "./reporterEnv";
 import { Logger } from "@utils/logger";
 import { settings } from "@api/settings";
 import { enableStyle } from "@api/styles";
+import { ensureUiStyles } from "@components/ui";
 import { initThemes, initThemeStoreListener } from "@api/themes";
 import { startUpdateChecks } from "@api/updater";
 import { initWebpackHook, reportPendingPatches } from "./webpack/patchWebpack";
@@ -48,6 +49,7 @@ if (IS_REPORTER) {
     startReporter();
 } else {
     enableStyle("majic-base", ":root { --majic-accent: #ff2d55; }");
+    ensureUiStyles();
     Plugins.startAllPlugins("Init");
     Webpack.onceReady.then(() => {
         Plugins.startAllPlugins("WebpackReady");

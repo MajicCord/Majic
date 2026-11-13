@@ -2,7 +2,7 @@
  * Majic — Translate modal
  */
 
-import { ensureUiStyles, SubHeading, Switch, Text } from "@components/ui";
+import { SubHeading, Switch, Text } from "@components/ui";
 import { findComponentByCodeLazy } from "@webpack";
 import { Modal, openModal, React, useMemo } from "@webpack/common";
 
@@ -70,6 +70,5 @@ function TranslateModal({ rootProps }: { rootProps: any }) {
 }
 
 export function openTranslateModal() {
-    ensureUiStyles();
     openModal((props: any) => <TranslateModal rootProps={props} />);
 }

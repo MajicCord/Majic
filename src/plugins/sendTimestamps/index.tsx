@@ -4,7 +4,6 @@
 
 import { ChatBarButton, type ChatBarButtonRenderer } from "@api/chatButtons";
 import { definePluginSettings } from "@api/settings";
-import { ensureUiStyles } from "@components/ui";
 import { createStrings } from "@i18n";
 import { copyWithToast, getTheme, insertTextIntoChatInputBox, Theme } from "@utils/discord";
 import { definePlugin, OptionType } from "@utils/types";
@@ -125,7 +124,6 @@ const SendTimestampButton: ChatBarButtonRenderer = ({ isAnyChat }) => {
         <ChatBarButton
             tooltip={s("button")}
             onClick={() => {
-                ensureUiStyles();
                 openModal((props: any) => <PickerModal {...props} />);
             }}
         >

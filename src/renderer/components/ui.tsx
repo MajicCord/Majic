@@ -58,10 +58,7 @@ const CSS = `
 
 export const ensureUiStyles = () => enableStyle("ui", CSS);
 
-export function Page({ children }: { children: ReactNode }) {
-    ensureUiStyles();
-    return <div className="majic-page">{children}</div>;
-}
+export const Page = ({ children }: { children: ReactNode }) => <div className="majic-page">{children}</div>;
 
 export const Heading = ({ children }: { children: ReactNode }) => <h2 className="majic-heading">{children}</h2>;
 export const SubHeading = ({ children }: { children: ReactNode }) => <h3 className="majic-subheading">{children}</h3>;

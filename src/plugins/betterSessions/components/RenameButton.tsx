@@ -2,7 +2,6 @@
  * Majic — BetterSessions buttons
  */
 
-import { ensureUiStyles } from "@components/ui";
 import { openModal, React } from "@webpack/common";
 
 import { s } from "../strings";
@@ -17,7 +16,6 @@ export function RenameButton({ session, state }: { session: SessionInfo["session
             className={`majic-button ${cl("rename-btn")}`}
             data-variant="secondary"
             onClick={() => {
-                ensureUiStyles();
                 openModal((props: any) => <RenameModal props={props} session={session} state={state} />);
             }}
         >

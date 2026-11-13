@@ -3,7 +3,7 @@
  */
 
 import { definePluginSettings } from "@api/settings";
-import { ensureUiStyles, Select } from "@components/ui";
+import { Select } from "@components/ui";
 import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { definePlugin, OptionType } from "@utils/types";
 import { FluxDispatcher, React, RestAPI, Stores, useEffect } from "@webpack/common";
@@ -173,7 +173,6 @@ export default definePlugin({
     ],
 
     async start() {
-        ensureUiStyles();
         if (getProviderName() === "klipy") return;
         cachedCategories = await getProvider().getCategories() ?? cachedCategories;
     },

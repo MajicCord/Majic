@@ -3,7 +3,7 @@
  */
 
 import { Menu } from "@api/contextMenu";
-import { Button, ensureUiStyles, SubHeading, Text } from "@components/ui";
+import { Button, SubHeading, Text } from "@components/ui";
 import { useAwaiter } from "@utils/misc";
 import { definePlugin } from "@utils/types";
 import { findLazy } from "@webpack";
@@ -251,7 +251,6 @@ export default definePlugin({
                     leadingAccessory={{ type: "icon", icon: MicrophoneIcon }}
                     label={s("sendVoiceMessage")}
                     action={() => {
-                        ensureUiStyles();
                         openModal((modalProps: any) => <VoiceMessageModal modalProps={modalProps} />, {
                             onCloseCallback: () => FluxDispatcher.dispatch({ type: "MAJIC_STOP_RECORDING" })
                         });

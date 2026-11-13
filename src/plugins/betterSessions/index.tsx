@@ -4,7 +4,6 @@
 
 import { showNotification } from "@api/notifications";
 import { definePluginSettings } from "@api/settings";
-import { ensureUiStyles } from "@components/ui";
 import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { definePlugin, OptionType } from "@utils/types";
 import { filters, findComponentByCodeLazy, findCssClassesLazy, findStoreLazy, mapMangledModuleLazy } from "@webpack";
@@ -191,7 +190,6 @@ export default definePlugin({
     },
 
     async start() {
-        ensureUiStyles();
         await fetchNamesFromDataStore();
 
         void checkNewSessions();
