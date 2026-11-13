@@ -19,7 +19,7 @@ export default definePlugin({
             find: "setDevtoolsCallbacks",
             replacement: {
                 match: /if\(null==\i\|\|"0\.0\.0"!==\i\.app\.getVersion\(\)\)/,
-                replace: "if(!0)"
+                replace: "if(false)"
             }
         }
     ]
