@@ -16,55 +16,10 @@ import {
     ProfileBadge,
     removeProfileBadge
 } from "@api/badges";
-import { settings } from "@api/settings";
+import { customBadgeIcon, customBadgeKey, getCustomBadges, isBadgeHidden, isSupporter, loadBadgeLists } from "@api/majicBadges";
 import { t } from "@i18n";
-import { BADGE_ASSETS, DEVELOPER_BADGE_ICON, isMajicDeveloper, SUPPORTER_BADGE_ICON } from "@utils/constants";
-import { Logger } from "@utils/logger";
+import { DEVELOPER_BADGE_ICON, isMajicDeveloper, SUPPORTER_BADGE_ICON } from "@utils/constants";
 import { definePlugin } from "@utils/types";
-
-const logger = new Logger("Badges", "#f1fa8c");
-
-interface CustomBadge {
-    tooltip: string;
-    icon: string;
-}
-
-const ICON_FILE = /^[\w.-]+\.(?:png|gif|webp)$/;
-
-let supporters = new Set<string>();
-let customBadges: Record<string, CustomBadge[]> = {};
-
-async function fetchJson(file: string): Promise<unknown> {
-    const res = await fetch(`${BADGE_ASSETS}/${file}`, { cache: "no-cache" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-}
-
-async function loadSupporters() {
-    try {
-        const ids = await fetchJson("supporters.json");
-        supporters = new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
-    } catch (err) {
-        logger.error("Failed to load supporters", err);
-    }
-}
-
-const isCustomBadge = (badge: any): badge is CustomBadge =>
-    typeof badge?.tooltip === "string" && typeof badge?.icon === "string" && ICON_FILE.test(badge.icon);
-
-async function loadCustomBadges() {
-    try {
-        const data = await fetchJson("custom.json");
-        if (!data || typeof data !== "object") return;
-        customBadges = Object.fromEntries(
-            Object.entries(data)
-                .filter(([userId, badges]) => /^\d+$/.test(userId) && Array.isArray(badges))
-                .map(([userId, badges]) => [userId, (badges as unknown[]).filter(isCustomBadge)])
-        );
-    } catch (err) {
-        logger.error("Failed to load custom badges", err);
-    }
-}
 
 const DeveloperBadge: ProfileBadge = {
     id: "majic_developer_badge",
@@ -77,7 +32,7 @@ const DeveloperBadge: ProfileBadge = {
     largeIconSrc: DEVELOPER_BADGE_ICON,
     link: "https://github.com/MajicCord/Majic",
     position: BadgePosition.START,
-    shouldShow: ({ userId }) => settings.badges.developer && isMajicDeveloper(userId)
+    shouldShow: ({ userId }) => isMajicDeveloper(userId) && !isBadgeHidden(userId, "developer")
 };
 
 const SupporterBadge: ProfileBadge = {
@@ -90,26 +45,24 @@ const SupporterBadge: ProfileBadge = {
     iconSrc: SUPPORTER_BADGE_ICON,
     largeIconSrc: SUPPORTER_BADGE_ICON,
     position: BadgePosition.START,
-    shouldShow: ({ userId }) => settings.badges.supporter && supporters.has(userId)
+    shouldShow: ({ userId }) => isSupporter(userId) && !isBadgeHidden(userId, "supporter")
 };
 
 const CustomBadges: ProfileBadge = {
     id: "majic_custom_badges",
     position: BadgePosition.START,
-    shouldShow: ({ userId }) => settings.badges.custom && !!customBadges[userId]?.length,
-    getBadges: ({ userId }) => (customBadges[userId] ?? []).map((badge, index) => {
-        const icon = `${BADGE_ASSETS}/custom/${badge.icon}`;
-        return {
-            id: `majic_custom_badge_${index}`,
+    getBadges: ({ userId }) => getCustomBadges(userId)
+        .filter(badge => !isBadgeHidden(userId, customBadgeKey(badge)))
+        .map(badge => ({
+            id: `majic_custom_badge_${badge.icon}`,
             description: badge.tooltip,
             name: badge.tooltip,
             infoLabel: "Majic",
             rarity: BadgeRarity.MYTHIC,
-            iconSrc: icon,
-            largeIconSrc: icon,
+            iconSrc: customBadgeIcon(badge),
+            largeIconSrc: customBadgeIcon(badge),
             position: BadgePosition.START
-        };
-    })
+        }))
 };
 
 export default definePlugin({
@@ -179,8 +132,7 @@ export default definePlugin({
     start() {
         addProfileBadge(SupporterBadge);
         addProfileBadge(CustomBadges);
-        loadSupporters();
-        loadCustomBadges();
+        loadBadgeLists();
     },
 
     stop() {

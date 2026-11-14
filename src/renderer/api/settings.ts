@@ -27,11 +27,7 @@ export interface Settings {
     windowsMaterial: "none" | "mica" | "tabbed" | "acrylic";
     macosVibrancyStyle?: string;
     themeLinks: string[];
-    badges: {
-        developer: boolean;
-        supporter: boolean;
-        custom: boolean;
-    };
+    hiddenBadges: string[];
     notifications: {
         useNative: "always" | "not-focused" | "never";
         timeout: number;
@@ -54,11 +50,7 @@ const DEFAULTS: Settings = {
     winCtrlQ: false,
     windowsMaterial: "none",
     themeLinks: [],
-    badges: {
-        developer: true,
-        supporter: true,
-        custom: true
-    },
+    hiddenBadges: [],
     notifications: {
         useNative: "not-focused",
         timeout: 5000
@@ -75,7 +67,7 @@ function load(): Settings {
         ...DEFAULTS,
         ...stored,
         notifications: { ...DEFAULTS.notifications, ...stored.notifications },
-        badges: { ...DEFAULTS.badges, ...stored.badges },
+        hiddenBadges: Array.isArray(stored.hiddenBadges) ? stored.hiddenBadges : [],
         uiElements: {
             chatBarButtons: { ...stored.uiElements?.chatBarButtons },
             messagePopoverButtons: { ...stored.uiElements?.messagePopoverButtons }

@@ -2,31 +2,23 @@
  * Majic — badges settings page
  */
 
-import { saveSettings, settings, type Settings } from "@api/settings";
+import { getOwnedBadges, type OwnedBadge } from "@api/majicBadges";
+import { saveSettings, settings } from "@api/settings";
 import { t, useLocale } from "@i18n";
-import { DEVELOPER_BADGE_ICON, SPONSOR_URL, SUPPORTER_BADGE_ICON } from "@utils/constants";
+import { SPONSOR_URL } from "@utils/constants";
 import { DiscordIcon, React, useReducer } from "@webpack/common";
 
 import { Button, Card, Heading, Page, Switch, Text } from "../ui";
 
-type BadgeKey = keyof Settings["badges"];
-
-const BADGES: Array<{ key: BadgeKey; icon: string }> = [
-    { key: "developer", icon: DEVELOPER_BADGE_ICON },
-    { key: "supporter", icon: SUPPORTER_BADGE_ICON },
-    { key: "custom", icon: "ImageIcon" }
-];
-
-const BadgeIcon = ({ icon }: { icon: string }) => icon.startsWith("https://")
-    ? <img src={icon} alt="" width={32} height={32} style={{ marginRight: 12, flexShrink: 0 }} />
-    : <span style={{ display: "flex", width: 32, height: 32, marginRight: 12, flexShrink: 0, alignItems: "center", justifyContent: "center", color: "var(--interactive-icon-default)" }}><DiscordIcon name={icon} size={24} /></span>;
-
-function BadgeCard({ badge, icon }: { badge: BadgeKey; icon: string }) {
+function BadgeCard({ badge }: { badge: OwnedBadge; }) {
     const [, rerender] = useReducer((n: number) => n + 1, 0);
-    const name = t(`badges.${badge}`);
+    const name = badge.name ?? t(`badges.${badge.kind}`);
+    const shown = !settings.hiddenBadges.includes(badge.key);
 
     const toggle = (value: boolean) => {
-        settings.badges[badge] = value;
+        settings.hiddenBadges = value
+            ? settings.hiddenBadges.filter(key => key !== badge.key)
+            : [...settings.hiddenBadges, badge.key];
         saveSettings();
         rerender();
     };
@@ -34,12 +26,12 @@ function BadgeCard({ badge, icon }: { badge: BadgeKey; icon: string }) {
     return (
         <Card>
             <div className="majic-row">
-                <BadgeIcon icon={icon} />
+                <img src={badge.icon} alt="" width={32} height={32} style={{ marginRight: 12, flexShrink: 0 }} />
                 <div className="majic-row-grow">
                     <Text><strong>{name}</strong></Text>
-                    <Text muted>{t(`badges.${badge}Description`)}</Text>
+                    <Text muted>{t(`badges.${badge.kind}Description`)}</Text>
                 </div>
-                <Switch checked={settings.badges[badge]} onChange={toggle} label={name} />
+                <Switch checked={shown} onChange={toggle} label={name} />
             </div>
         </Card>
     );
@@ -47,13 +39,14 @@ function BadgeCard({ badge, icon }: { badge: BadgeKey; icon: string }) {
 
 export function BadgesTab() {
     useLocale();
+    const owned = getOwnedBadges();
 
     return (
         <Page>
             <Heading>{t("settings.badges")}</Heading>
-            <Text muted>{t("badges.hint")}</Text>
+            <Text muted>{t(owned.length ? "badges.hint" : "badges.none")}</Text>
 
-            {BADGES.map(({ key, icon }) => <BadgeCard key={key} badge={key} icon={icon} />)}
+            {owned.map(badge => <BadgeCard key={badge.key} badge={badge} />)}
 
             <Card>
                 <div className="majic-row">
