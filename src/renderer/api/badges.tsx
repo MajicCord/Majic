@@ -2,6 +2,7 @@
  * Majic — profile badges API
  */
 
+import { t } from "@i18n";
 import { withErrorBoundary } from "@utils/ErrorBoundary";
 import { Logger } from "@utils/logger";
 import { React } from "@webpack/common";
@@ -100,7 +101,7 @@ function toDirectoryBadge(badge: ProfileBadge, userId: string): DirectoryBadge {
     return directoryBadges[id] ??= {
         badge_id: id,
         name: badge.name ?? badge.description ?? "",
-        description: badge.detail ?? badge.description ?? badge.name ?? "",
+        description: [badge.detail, t("badges.disclaimer")].filter(Boolean).join("\n\n"),
         info_label: badge.infoLabel ?? "Majic",
         rarity: badge.rarity ?? BadgeRarity.COMMON,
         simple_icon_url: badge.iconSrc!,

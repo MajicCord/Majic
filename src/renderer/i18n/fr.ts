@@ -44,6 +44,7 @@ const fr: Dictionary = {
     "badges.custom": "Badges personnalisés",
     "badges.customDescription": "Badges personnels donnés à certains utilisateurs de Majic",
     "badges.supporterDescription": "Affiché sur le profil des personnes qui soutiennent Majic",
+    "badges.disclaimer": "Ce n'est pas un badge officiel de Discord. Il existe uniquement dans Majic et ne fait pas partie de l'application Discord. Si quelqu'un s'en sert pour te convaincre de quoi que ce soit ou pour t'arnaquer, c'est un faux.",
     "majic.openSettingsFolder": "Ouvrir le dossier des réglages",
     "majic.export": "Exporter les réglages",
     "majic.import": "Importer des réglages",

@@ -42,6 +42,7 @@ export default {
     "badges.custom": "Custom badges",
     "badges.customDescription": "Personal badges given to some Majic users",
     "badges.supporterDescription": "Shown on the profiles of the people who support Majic",
+    "badges.disclaimer": "This is not an official Discord badge. It only exists in Majic and is not part of the Discord app. If someone uses it to convince you of anything or to scam you, it is fake.",
     "majic.openSettingsFolder": "Open settings folder",
     "majic.export": "Export settings",
     "majic.import": "Import settings",
