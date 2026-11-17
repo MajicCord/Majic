@@ -12,6 +12,7 @@ import type { ReporterResult } from "@renderer/reporter";
 import { DiscordIcon, React, useEffect, useReducer, useState } from "@webpack/common";
 
 import { Button, Card, Heading, Page, Select, Slider, SubHeading, Switch, Text } from "../ui";
+import { SupportBanner } from "./SupportBanner";
 
 type WindowSwitch = "nativeTitleBar" | "transparent" | "disableMinSize" | "winCtrlQ";
 
@@ -241,6 +242,8 @@ export function MajicTab() {
         <Page>
             <Heading>Majic</Heading>
             <Text muted>{t("majic.version", { version: Majic.version })}</Text>
+
+            <SupportBanner />
 
             <Card>
                 <SubHeading>{t("majic.notifications")}</SubHeading>

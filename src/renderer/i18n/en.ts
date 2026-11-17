@@ -40,6 +40,8 @@ export default {
     "badges.developerDescription": "Shown on the profiles of the people who build Majic",
     "badges.supporterAsk": "Majic is free and open source. If you like it, consider supporting its development!",
     "badges.support": "Support Majic",
+    "support.thanksTitle": "Thank you for your support!",
+    "support.thanks": "You help keep Majic free and open source. Thank you!",
     "badges.custom": "Custom badges",
     "badges.customDescription": "A personal badge given to you",
     "badges.supporterDescription": "Shown on the profiles of the people who support Majic",
