@@ -47,7 +47,10 @@ export const s = createStrings({
         notSet: "Not set",
         listView: "List view",
         galleryView: "Gallery view",
-        and: " and "
+        and: " and ",
+        deadTitle: "Plugin Deprecated",
+        deadText: "Discord patched this plugin, it's no longer possible to see hidden channels. All channels will instead show up as \"No Access\"!",
+        deadRemoval: "There is nothing we can do to fix it, so the plugin will be removed soon."
     },
     fr: {
         lockIconMode: "Style normal avec une icône de cadenas",
@@ -88,7 +91,10 @@ export const s = createStrings({
         notSet: "Non défini",
         listView: "Liste",
         galleryView: "Galerie",
-        and: " et "
+        and: " et ",
+        deadTitle: "Plugin obsolète",
+        deadText: "Discord a bloqué ce plugin, il n'est plus possible de voir les salons cachés. Tous les salons s'afficheront à la place comme « Pas d'accès » !",
+        deadRemoval: "On ne peut rien y faire, le plugin sera donc bientôt supprimé."
     }
 });
 

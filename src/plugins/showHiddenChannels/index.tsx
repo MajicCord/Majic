@@ -63,18 +63,29 @@ const CSS = [
     ".majic-shc-allowed-users-and-roles-container-title { display: flex; flex-direction: row; align-items: center; gap: 0.5em; }",
     ".majic-shc-allowed-users-and-roles-container-toggle-btn, .majic-shc-allowed-users-and-roles-container-permdetails-btn { all: unset; cursor: pointer; display: flex; align-items: center; color: var(--text-default); }",
     ".majic-shc-allowed-users-and-roles-container > [class*=\"members\"] { margin-left: 12px; flex-wrap: wrap; justify-content: center; }",
-    ".majic-shc-hidden-channel-icon { cursor: not-allowed; margin-left: 6px; z-index: 0; }"
+    ".majic-shc-hidden-channel-icon { cursor: not-allowed; margin-left: 6px; z-index: 0; }",
+    ".majic-shc-dead { display: flex; flex-direction: column; gap: .5em; border-color: var(--status-danger, #da373c); background: rgba(218, 55, 60, .1); }"
 ].join(" ");
+
+function DeadNotice() {
+    return (
+        <div className="majic-notice-card majic-shc-dead">
+            <strong>{s("deadTitle")}</strong>
+            <span>{s("deadText")}</span>
+            <span>{s("deadRemoval")}</span>
+        </div>
+    );
+}
 
 type R = (...groups: string[]) => string;
 
 export default definePlugin({
     name: "ShowHiddenChannels",
-    description: "Shows channels you don't have access to",
+    description: "THIS PLUGIN IS DEAD! Discord patched it. See the plugin settings for more information.",
     authors: [{ name: "SnailyStudios" }],
     translations: {
         fr: {
-            description: "Affiche les salons auxquels tu n'as pas accès",
+            description: "CE PLUGIN EST MORT ! Discord l'a bloqué. Plus d'infos dans les paramètres du plugin.",
             options: {
                 hideUnreads: "Masquer les non-lus",
                 showMode: "Affichage des salons cachés",
@@ -83,6 +94,7 @@ export default definePlugin({
         }
     },
     settings,
+    settingsAboutComponent: DeadNotice,
 
     css: CSS,
 
