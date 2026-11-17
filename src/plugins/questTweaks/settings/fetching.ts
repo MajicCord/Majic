@@ -1,0 +1,98 @@
+/*
+ * Majic — QuestTweaks automatic fetching
+ */
+
+import type { Quest } from "../types";
+import { fetchAndAlertQuests } from "../utils/fetching";
+import { QL } from "../utils/logging";
+import { getCurrentUserId, getQuestTweaksSettings } from "./access";
+
+let autoFetchInterval: null | ReturnType<typeof setInterval> = null;
+const minimumAutoFetchIntervalValue = 30 * 60;
+const maximumAutoFetchIntervalValue = 12 * 60 * 60;
+
+export function autoFetchCompatible(): boolean {
+    const settings = getQuestTweaksSettings();
+    const {
+        newExcludedQuestAlertSound,
+        newQuestAlertSound,
+        questFetchInterval,
+        notifyOnNewExcludedQuests,
+        notifyOnNewQuests,
+        questButtonDisplay: displayMode,
+        questButtonIndicator: indicatorMode
+    } = settings;
+    const fetching = !settings.disableQuestsEverything && questFetchInterval > 0;
+    const notificationsCompatible = notifyOnNewQuests || notifyOnNewExcludedQuests || Boolean(newQuestAlertSound) || Boolean(newExcludedQuestAlertSound);
+    let buttonCompatible = false;
+
+    if (displayMode === "always") {
+        buttonCompatible = ["pill", "badge", "both"].includes(indicatorMode);
+    } else if (displayMode === "unclaimed") {
+        buttonCompatible = true;
+    }
+
+    const autoEnroll = settings.autoEnrollQuests && settings.autoEnrollQuestsUnpaused !== false;
+    const autoComplete = settings.autoCompleteQuests && settings.autoCompleteQuestsUnpaused !== false;
+    const automationCompatible = settings.usedKonamiCode === true && settings.allowChangingDangerousSettings && (autoEnroll || autoComplete);
+    const compatible = fetching && (buttonCompatible || notificationsCompatible || automationCompatible);
+
+    return compatible;
+}
+
+export function startAutoFetchingQuests(force: boolean = false): void {
+    if (!autoFetchCompatible()) {
+        stopAutoFetchingQuests();
+
+        return;
+    }
+
+    if (autoFetchInterval) {
+        if (!force) {
+            return;
+        }
+
+        stopAutoFetchingQuests();
+    }
+
+    const { questFetchInterval } = getQuestTweaksSettings();
+    const interval = Math.min(Math.max(questFetchInterval, minimumAutoFetchIntervalValue), maximumAutoFetchIntervalValue);
+    autoFetchInterval = setInterval(() => { void fetchAndAlertQuests("AUTO_FETCH"); }, interval * 1000);
+    QL.info("START_AUTO_FETCHING_QUESTS", { autoFetchIntervalID: autoFetchInterval, questFetchInterval, questFetchIntervalClamped: interval });
+}
+
+export function stopAutoFetchingQuests(): void {
+    if (autoFetchInterval) {
+        clearInterval(autoFetchInterval);
+        autoFetchInterval = null;
+        QL.info("STOP_AUTO_FETCHING_QUESTS");
+    }
+}
+
+export function resetQuestsToResume(quest?: Quest, userId?: string): void {
+    const { resumeQuestIDs } = getQuestTweaksSettings();
+    const key = getCurrentUserId(userId);
+
+    if (!key) {
+        QL.warn("RESET_QUESTS_TO_RESUME_NO_USER");
+        return;
+    }
+
+    const resumeState = resumeQuestIDs[key];
+
+    if (!resumeState) {
+        return;
+    }
+
+    if (!quest) {
+        delete resumeQuestIDs[key];
+
+        return;
+    }
+
+    resumeQuestIDs[key] = {
+        timestamp: resumeState.timestamp,
+        questIDs: resumeState.questIDs.filter(id => id !== quest.id),
+        automaticQuestIDs: resumeState.automaticQuestIDs?.filter(id => id !== quest.id)
+    };
+}

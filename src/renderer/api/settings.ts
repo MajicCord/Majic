@@ -85,13 +85,13 @@ export function saveSettings() {
 
 const changeListeners = new Map<string, Set<() => void>>();
 
-function addChangeListener(path: string, listener: () => void) {
+export function addChangeListener(path: string, listener: () => void) {
     let listeners = changeListeners.get(path);
     if (!listeners) changeListeners.set(path, listeners = new Set());
     listeners.add(listener);
 }
 
-function removeChangeListener(path: string, listener: () => void) {
+export function removeChangeListener(path: string, listener: () => void) {
     changeListeners.get(path)?.delete(listener);
 }
 

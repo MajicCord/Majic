@@ -1,0 +1,428 @@
+:where(.majic-qt-setting) :where(h3, h4, p) {
+    margin: 0;
+}
+
+:where(.majic-qt-setting) :where(h3, h4) {
+    color: var(--text-strong);
+}
+
+.majic-qt-settings:has(> .majic-qt-settings-search) {
+    reading-flow: flex-visual;
+}
+
+.majic-qt-settings-search {
+    order: -1;
+    margin-top: 5px;
+}
+
+.majic-qt-settings-search-empty {
+    margin-top: 12px;
+    color: var(--text-muted);
+}
+
+.majic-qt-setting {
+    border-radius: 3px;
+    border-left: 3px solid var(--text-strong);
+    padding: 8px;
+    user-select: text;
+}
+
+.majic-qt-settings-divider-small {
+    margin: 10px 0;
+}
+
+.majic-qt-settings-divider-medium {
+    margin: 15px 0;
+}
+
+.majic-qt-settings-divider-large {
+    margin: 20px 0;
+}
+
+.majic-qt-dimmed-settings-item {
+    filter: brightness(0.5);
+}
+
+.majic-qt-setting-header {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.majic-qt-setting-subheader {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 15px 0 5px;
+}
+
+.majic-qt-setting-paragraph {
+    font-size: 14px;
+    font-weight: 400;
+    margin: 5px 0;
+    line-height: normal;
+}
+
+.majic-qt-setting-description {
+    margin-bottom: 15px;
+    line-height: normal;
+}
+
+.majic-qt-setting-description-multi-paragraph {
+    line-height: 0.2em;
+}
+
+[class*="clickTrapContainer"] > div > .majic-qt-settings-tooltip {
+    margin-right: 4px;
+}
+
+.majic-qt-settings-tooltip-content {
+    text-align: justify;
+    white-space: pre-line;
+}
+
+.majic-qt-setting-switch {
+    margin-bottom: 5px;
+}
+
+.majic-qt-setting-switch [class*="container_"] [class*="labelContainer_"] label {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.majic-qt-setting-subtle-switch [class*="container_"] [class*="labelContainer_"] label,
+.majic-qt-setting-switch [class*="container_"] [class*="labelContainer_"] div {
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.majic-qt-notice-card {
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 4px;
+    line-height: 0.2em;
+}
+
+.majic-qt-notice-card-red {
+    border-left: 3px solid var(--status-danger);
+    background-color: color-mix(in srgb, var(--status-danger) 12%, transparent);
+}
+
+.majic-qt-notice-card-blue {
+    border-left: 3px solid var(--background-brand);
+    background-color: color-mix(in srgb, var(--background-brand) 12%, transparent);
+}
+
+.majic-qt-notice-card-solo {
+    margin: 12px 0 0;
+}
+
+.majic-qt-settings-button > button[data-mana-component="button"] {
+    border-radius: 3px;
+}
+
+.majic-qt-settings-button > button[data-mana-component="button"] span {
+    font-size: 14px;
+}
+
+.majic-qt-setting [data-floating-ui-focusable][class*="selectDropdown"],
+.majic-qt-setting [data-mana-component="select-input-field"] > [class*="selectField"],
+.majic-qt-setting [data-mana-component="select-input-field"] [class*="tagList"] > div {
+    border-radius: 3px;
+}
+
+.majic-qt-inline-volume-slider {
+    margin-top: 0;
+}
+
+.majic-qt-sound-preview-button {
+    color: var(--interactive-normal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.majic-qt-sound-preview-button:hover,
+.majic-qt-sound-preview-button.majic-qt-playing-audio {
+    background: var(--background-modifier-hover);
+}
+
+.majic-qt-sound-preview-button:hover {
+    color: var(--interactive-active);
+}
+
+.majic-qt-sound-preview-button.majic-qt-playing-audio {
+    color: var(--red-500);
+}
+
+.majic-qt-sound-preview-button:disabled {
+    cursor: default;
+}
+
+.majic-qt-sound-select [class*="selectedIcon"] {
+    display: none;
+}
+
+.majic-qt-no-top-margin,
+.majic-qt-margin-top-0 {
+    margin-top: 0;
+}
+
+.majic-qt-margin-top-1 {
+    margin-top: 1px;
+}
+
+.majic-qt-margin-top-2 {
+    margin-top: 2px;
+}
+
+.majic-qt-margin-top-3 {
+    margin-top: 3px;
+}
+
+.majic-qt-margin-top-4 {
+    margin-top: 4px;
+}
+
+.majic-qt-margin-top-5 {
+    margin-top: 5px;
+}
+
+.majic-qt-margin-top-6 {
+    margin-top: 6px;
+}
+
+.majic-qt-margin-top-7 {
+    margin-top: 7px;
+}
+
+.majic-qt-margin-top-8 {
+    margin-top: 8px;
+}
+
+.majic-qt-margin-top-9 {
+    margin-top: 9px;
+}
+
+.majic-qt-margin-top-10 {
+    margin-top: 10px;
+}
+
+.majic-qt-margin-top-11 {
+    margin-top: 11px;
+}
+
+.majic-qt-margin-top-12 {
+    margin-top: 12px;
+}
+
+.majic-qt-margin-top-13 {
+    margin-top: 13px;
+}
+
+.majic-qt-margin-top-14 {
+    margin-top: 14px;
+}
+
+.majic-qt-margin-top-15 {
+    margin-top: 15px;
+}
+
+.majic-qt-no-bottom-margin,
+.majic-qt-margin-bottom-0 {
+    margin-bottom: 0;
+}
+
+.majic-qt-margin-bottom-1 {
+    margin-bottom: 1px;
+}
+
+.majic-qt-margin-bottom-2 {
+    margin-bottom: 2px;
+}
+
+.majic-qt-margin-bottom-3 {
+    margin-bottom: 3px;
+}
+
+.majic-qt-margin-bottom-4 {
+    margin-bottom: 4px;
+}
+
+.majic-qt-margin-bottom-5 {
+    margin-bottom: 5px;
+}
+
+.majic-qt-margin-bottom-6 {
+    margin-bottom: 6px;
+}
+
+.majic-qt-margin-bottom-7 {
+    margin-bottom: 7px;
+}
+
+.majic-qt-margin-bottom-8 {
+    margin-bottom: 8px;
+}
+
+.majic-qt-margin-bottom-9 {
+    margin-bottom: 9px;
+}
+
+.majic-qt-margin-bottom-10 {
+    margin-bottom: 10px;
+}
+
+.majic-qt-margin-bottom-11 {
+    margin-bottom: 11px;
+}
+
+.majic-qt-margin-bottom-12 {
+    margin-bottom: 12px;
+}
+
+.majic-qt-margin-bottom-13 {
+    margin-bottom: 13px;
+}
+
+.majic-qt-margin-bottom-14 {
+    margin-bottom: 14px;
+}
+
+.majic-qt-margin-bottom-15 {
+    margin-bottom: 15px;
+}
+
+.majic-qt-settings-row {
+    margin-top: 4px;
+    display: flex;
+    gap: 4px;
+    align-items: flex-start;
+}
+
+.majic-qt-settings-row-item {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.majic-qt-settings-row-item-content {
+    flex: 0 0 auto;
+}
+
+.majic-qt-settings-slider-control-container {
+    margin: 4px 0 0;
+    background-color: var(--input-background-default, var(--input-background));
+    padding: 0 12px 0 4px;
+    border-radius: 3px;
+    border: 1px solid var(--border-normal);
+    min-height: 40px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+}
+
+.majic-qt-settings-slider-control {
+    margin: 0 4px;
+    width: 100%;
+}
+
+.majic-qt-sound-select-row-item {
+    flex: 0 1 67%;
+}
+
+.majic-qt-volume-slider-row-item {
+    flex: 0 1 33%;
+}
+
+.majic-qt-quest-tile-gradient-row-item {
+    flex: 0 1 42%;
+}
+
+.majic-qt-quest-tile-preload-row-item {
+    flex: 0 1 58%;
+}
+
+.majic-qt-quest-tile-color-row {
+    align-items: stretch;
+}
+
+.majic-qt-quest-tile-color-row-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.majic-qt-settings-color-picker.majic-qt-quest-tile-color-picker {
+    display: flex;
+    height: 38px;
+    min-height: 38px;
+    min-width: 0;
+    margin-top: 5px;
+}
+
+.majic-qt-settings-color-picker.majic-qt-quest-tile-color-picker > [class*="colorSwatch"] {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 38px;
+}
+
+.majic-qt-settings-color-picker.majic-qt-quest-tile-color-picker [class*="swatch"],
+.majic-qt-settings-color-picker.majic-qt-quest-tile-color-picker [class*="Swatch"] {
+    width: 100%;
+    height: 100%;
+    min-height: 38px;
+    border-radius: 3px;
+}
+
+.majic-qt-settings-color-picker.majic-qt-disabled-color-picker {
+    filter: brightness(0.5);
+    pointer-events: none;
+}
+
+.majic-qt-quest-tile-color-button {
+    margin-top: 6px;
+}
+
+.majic-qt-settings-color-picker.majic-qt-quest-button-color-picker {
+    display: flex;
+    height: 38px;
+    min-height: 38px;
+    min-width: 0;
+    margin-top: 5px;
+}
+
+.majic-qt-settings-color-picker.majic-qt-quest-button-color-picker > [class*="colorSwatch"] {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 38px;
+}
+
+.majic-qt-settings-color-picker.majic-qt-quest-button-color-picker [class*="swatch"],
+.majic-qt-settings-color-picker.majic-qt-quest-button-color-picker [class*="Swatch"] {
+    width: 100%;
+    height: 100%;
+    min-height: 38px;
+    border-radius: 3px;
+}
+
+.majic-qt-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.majic-qt-warning {
+    display: flex;
+    flex-direction: column;
+    gap: .5em;
+    border-color: var(--status-danger, #da373c);
+    background: rgba(218, 55, 60, .1);
+}
