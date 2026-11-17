@@ -16,6 +16,8 @@ const CSS = `
 .majic-card { padding: 16px; border-radius: 8px; background: var(--background-base-lower); border: 1px solid var(--border-subtle); }
 .majic-row { display: flex; align-items: center; gap: 12px; }
 .majic-row-grow { flex: 1; min-width: 0; }
+.majic-plugin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.majic-plugin-grid > .majic-plugin-card-expanded { grid-column: 1 / -1; }
 .majic-switch { position: relative; flex-shrink: 0; width: 40px; height: 24px; border-radius: 12px; border: none; padding: 0; cursor: pointer; background: var(--border-subtle, #4e5058); transition: background .15s; }
 .majic-switch[aria-checked="true"] { background: var(--majic-accent); }
 .majic-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
@@ -63,7 +65,7 @@ export const Page = ({ children }: { children: ReactNode }) => <div className="m
 export const Heading = ({ children }: { children: ReactNode }) => <h2 className="majic-heading">{children}</h2>;
 export const SubHeading = ({ children }: { children: ReactNode }) => <h3 className="majic-subheading">{children}</h3>;
 export const Text = ({ children, muted }: { children: ReactNode; muted?: boolean }) => <p className={muted ? "majic-text majic-muted" : "majic-text"}>{children}</p>;
-export const Card = ({ children }: { children: ReactNode }) => <div className="majic-card">{children}</div>;
+export const Card = ({ children, className }: { children: ReactNode; className?: string }) => <div className={className ? `majic-card ${className}` : "majic-card"}>{children}</div>;
 
 export function Switch({ checked, onChange, disabled, label }: { checked: boolean; onChange(value: boolean): void; disabled?: boolean; label?: string }) {
     return (

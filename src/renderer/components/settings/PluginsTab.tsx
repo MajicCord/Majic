@@ -27,7 +27,7 @@ function PluginCard({ plugin, onRestartNeeded }: { plugin: Plugin; onRestartNeed
     };
 
     return (
-        <Card>
+        <Card className={expanded ? "majic-plugin-card-expanded" : undefined}>
             <div className="majic-row">
                 <div className="majic-row-grow">
                     <div className="majic-row" style={{ gap: 8 }}>
@@ -86,7 +86,9 @@ export function PluginsTab() {
                 <div className="majic-row-grow"><TextInput value={search} onChange={setSearch} placeholder={t("plugins.search")} /></div>
                 <div style={{ width: 180 }}><Select<Filter> value={filter} options={filters} onChange={setFilter} /></div>
             </div>
-            {visible.map(plugin => <PluginCard key={plugin.name} plugin={plugin} onRestartNeeded={() => setRestartNeeded(true)} />)}
+            <div className="majic-plugin-grid">
+                {visible.map(plugin => <PluginCard key={plugin.name} plugin={plugin} onRestartNeeded={() => setRestartNeeded(true)} />)}
+            </div>
             {!visible.length && <Text muted>{t("plugins.noResults")}</Text>}
         </Page>
     );
