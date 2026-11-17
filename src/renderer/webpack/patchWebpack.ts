@@ -90,7 +90,8 @@ function applyPatch(id: PropertyKey, patch: RegisteredPatch, state: PatchState) 
             }
             nextFactory = compile(id, nextCode, new Set([...state.patchedBy, patch.plugin]));
         } catch (err) {
-            logger.error(`Patch by ${patch.plugin} errored (module ${String(id)}): ${match}`, err);
+            const isKnownContextMenuError = patch.plugin === "ContextMenuAPI" && err instanceof SyntaxError && err.message.includes("arguments");
+            if (!isKnownContextMenuError) logger.error(`Patch by ${patch.plugin} errored (module ${String(id)}): ${match}`, err);
             if (patch.group) return undo("errored", match);
             continue;
         }
@@ -105,10 +106,11 @@ function patchFactory(id: PropertyKey, original: ModuleFactory): TaggedFactory {
     const source = String(original);
     const state: PatchState = { code: toExpression(source), factory: original, patchedBy: new Set() };
 
-    for (const patch of [...patches]) {
+    for (let i = 0; i < patches.length; i++) {
+        const patch = patches[i];
         if (!sourceMatches(source, patch.find)) continue;
         applyPatch(id, patch, state);
-        if (!patch.all) patches.splice(patches.indexOf(patch), 1);
+        if (!patch.all) patches.splice(i--, 1);
     }
 
     const result = state.factory as TaggedFactory;
@@ -116,7 +118,7 @@ function patchFactory(id: PropertyKey, original: ModuleFactory): TaggedFactory {
 
     if (result !== original) {
         (original as TaggedFactory)[SYM_PATCHED_BY] = state.patchedBy;
-        logger.info(`Module ${String(id)} patched by ${[...state.patchedBy].join(", ")}`);
+        if (IS_DEV) logger.info(`Module ${String(id)} patched by ${[...state.patchedBy].join(", ")}`);
     }
     return result;
 }

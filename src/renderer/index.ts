@@ -54,7 +54,7 @@ if (IS_REPORTER) {
     Webpack.onceReady.then(() => {
         Plugins.startAllPlugins("WebpackReady");
         initThemeStoreListener();
-        setTimeout(Webpack.Common.reportCommons, 5_000);
+        if (IS_DEV) setTimeout(Webpack.Common.reportCommons, 5_000);
         startUpdateChecks();
     });
 
